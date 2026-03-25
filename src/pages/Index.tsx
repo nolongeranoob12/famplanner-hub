@@ -24,7 +24,7 @@ export default function Index() {
     fetchActivities();
   }, [fetchActivities]);
 
-  const handleAdd = useCallback(async (data: { member_name: string; type: ActivityType; description: string }) => {
+  const handleAdd = useCallback(async (data: { member_name: string; type: ActivityType; description: string; activity_date?: string }) => {
     try {
       const newActivity = await addActivity(data);
       setActivities(prev => [newActivity, ...prev]);
