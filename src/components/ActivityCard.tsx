@@ -35,6 +35,11 @@ export function ActivityCard({ activity, onDelete }: ActivityCardProps) {
             </span>
           </div>
           <p className="mt-1 text-foreground/80 text-sm leading-relaxed">{activity.description}</p>
+          {activity.activity_date && (
+            <div className="mt-1.5 text-xs font-semibold text-primary">
+              📅 {format(new Date(activity.activity_date + 'T00:00:00'), 'EEEE, MMM d, yyyy')}
+            </div>
+          )}
           <div className="mt-2 flex items-center gap-2 text-xs text-muted-foreground">
             <span>{formatDistanceToNow(new Date(activity.created_at), { addSuffix: true })}</span>
             {wasEdited && (

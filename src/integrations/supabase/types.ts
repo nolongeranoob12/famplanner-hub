@@ -16,6 +16,7 @@ export type Database = {
     Tables: {
       activities: {
         Row: {
+          activity_date: string | null
           created_at: string
           description: string
           id: string
@@ -24,6 +25,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          activity_date?: string | null
           created_at?: string
           description: string
           id?: string
@@ -32,6 +34,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          activity_date?: string | null
           created_at?: string
           description?: string
           id?: string
