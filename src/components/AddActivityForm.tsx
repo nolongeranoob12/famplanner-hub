@@ -11,7 +11,7 @@ import { Plus, CalendarIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface AddActivityFormProps {
-  onAdd: (data: { member_name: string; type: ActivityType; description: string }) => void;
+  onAdd: (data: { member_name: string; type: ActivityType; description: string; activity_date?: string }) => void;
 }
 
 export function AddActivityForm({ onAdd }: AddActivityFormProps) {
