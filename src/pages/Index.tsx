@@ -1,20 +1,47 @@
-import { useState, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { AddActivityForm } from '@/components/AddActivityForm';
 import { ActivityCard } from '@/components/ActivityCard';
 import { getActivities, addActivity, deleteActivity, type Activity, type ActivityType } from '@/lib/activities';
-import { Users } from 'lucide-react';
+import { Users, Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
 
 export default function Index() {
-  const [activities, setActivities] = useState<Activity[]>(getActivities);
+  const [activities, setActivities] = useState<Activity[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const handleAdd = useCallback((data: { memberName: string; type: ActivityType; description: string }) => {
-    const newActivity = addActivity(data);
-    setActivities(prev => [newActivity, ...prev]);
+  const fetchActivities = useCallback(async () => {
+    try {
+      const data = await getActivities();
+      setActivities(data);
+    } catch {
+      toast.error('Failed to load activities');
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
-  const handleDelete = useCallback((id: string) => {
-    deleteActivity(id);
-    setActivities(prev => prev.filter(a => a.id !== id));
+  useEffect(() => {
+    fetchActivities();
+  }, [fetchActivities]);
+
+  const handleAdd = useCallback(async (data: { member_name: string; type: ActivityType; description: string }) => {
+    try {
+      const newActivity = await addActivity(data);
+      setActivities(prev => [newActivity, ...prev]);
+      toast.success('Activity posted!');
+    } catch {
+      toast.error('Failed to post activity');
+    }
+  }, []);
+
+  const handleDelete = useCallback(async (id: string) => {
+    try {
+      await deleteActivity(id);
+      setActivities(prev => prev.filter(a => a.id !== id));
+      toast.success('Activity removed');
+    } catch {
+      toast.error('Failed to delete activity');
+    }
   }, []);
 
   return (
@@ -34,7 +61,11 @@ export default function Index() {
       <main className="max-w-lg mx-auto px-4 py-6 space-y-4">
         <AddActivityForm onAdd={handleAdd} />
 
-        {activities.length === 0 ? (
+        {loading ? (
+          <div className="flex justify-center py-16">
+            <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+          </div>
+        ) : activities.length === 0 ? (
           <div className="text-center py-16">
             <p className="text-5xl mb-4">👨‍👩‍👧‍👦</p>
             <p className="text-muted-foreground font-semibold">No activities yet</p>
