@@ -7,7 +7,7 @@ import { activityConfig, type ActivityType } from '@/lib/activities';
 import { Plus } from 'lucide-react';
 
 interface AddActivityFormProps {
-  onAdd: (data: { memberName: string; type: ActivityType; description: string }) => void;
+  onAdd: (data: { member_name: string; type: ActivityType; description: string }) => void;
 }
 
 export function AddActivityForm({ onAdd }: AddActivityFormProps) {
@@ -19,7 +19,7 @@ export function AddActivityForm({ onAdd }: AddActivityFormProps) {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!memberName.trim() || !description.trim()) return;
-    onAdd({ memberName: memberName.trim(), type, description: description.trim() });
+    onAdd({ member_name: memberName.trim(), type, description: description.trim() });
     setMemberName('');
     setDescription('');
     setType('dinner');

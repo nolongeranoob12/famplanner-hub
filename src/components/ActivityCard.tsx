@@ -1,20 +1,12 @@
 import { activityConfig, type Activity } from '@/lib/activities';
 import { Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { formatDistanceToNow } from 'date-fns';
+import { formatDistanceToNow, format } from 'date-fns';
 
 interface ActivityCardProps {
   activity: Activity;
   onDelete: (id: string) => void;
 }
-
-const memberColors = [
-  'bg-primary text-primary-foreground',
-  'bg-accent text-accent-foreground',
-  'bg-destructive text-destructive-foreground',
-  'hsl(270 60% 55%)',
-  'hsl(200 70% 50%)',
-];
 
 function getAvatarColor(name: string) {
   let hash = 0;
@@ -25,8 +17,9 @@ function getAvatarColor(name: string) {
 
 export function ActivityCard({ activity, onDelete }: ActivityCardProps) {
   const config = activityConfig[activity.type];
-  const initial = activity.memberName.charAt(0).toUpperCase();
-  const avatarBg = getAvatarColor(activity.memberName);
+  const initial = activity.member_name.charAt(0).toUpperCase();
+  const avatarBg = getAvatarColor(activity.member_name);
+  const wasEdited = activity.updated_at !== activity.created_at;
 
   return (
     <div className="bg-card rounded-2xl p-4 border border-border shadow-sm hover:shadow-md transition-shadow group">
@@ -36,15 +29,20 @@ export function ActivityCard({ activity, onDelete }: ActivityCardProps) {
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
-            <span className="font-bold text-foreground">{activity.memberName}</span>
+            <span className="font-bold text-foreground">{activity.member_name}</span>
             <span className={`text-xs px-2 py-0.5 rounded-full font-semibold ${config.color}`}>
               {config.emoji} {config.label}
             </span>
           </div>
           <p className="mt-1 text-foreground/80 text-sm leading-relaxed">{activity.description}</p>
-          <p className="mt-2 text-xs text-muted-foreground">
-            {formatDistanceToNow(new Date(activity.timestamp), { addSuffix: true })}
-          </p>
+          <div className="mt-2 flex items-center gap-2 text-xs text-muted-foreground">
+            <span>{formatDistanceToNow(new Date(activity.created_at), { addSuffix: true })}</span>
+            {wasEdited && (
+              <span className="italic">
+                · edited {format(new Date(activity.updated_at), 'MMM d, h:mm a')}
+              </span>
+            )}
+          </div>
         </div>
         <Button
           variant="ghost"

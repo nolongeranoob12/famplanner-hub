@@ -1,11 +1,14 @@
+import { supabase } from '@/integrations/supabase/client';
+
 export type ActivityType = 'dinner' | 'sports' | 'errands' | 'travel' | 'movie' | 'hangout' | 'other';
 
 export interface Activity {
   id: string;
-  memberName: string;
+  member_name: string;
   type: ActivityType;
   description: string;
-  timestamp: string;
+  created_at: string;
+  updated_at: string;
 }
 
 export const activityConfig: Record<ActivityType, { emoji: string; label: string; color: string }> = {
@@ -18,26 +21,26 @@ export const activityConfig: Record<ActivityType, { emoji: string; label: string
   other: { emoji: '📌', label: 'Other', color: 'bg-muted text-muted-foreground' },
 };
 
-const STORAGE_KEY = 'family-activities';
-
-export function getActivities(): Activity[] {
-  const raw = localStorage.getItem(STORAGE_KEY);
-  return raw ? JSON.parse(raw) : [];
+export async function getActivities(): Promise<Activity[]> {
+  const { data, error } = await supabase
+    .from('activities')
+    .select('*')
+    .order('created_at', { ascending: false });
+  if (error) throw error;
+  return (data ?? []) as Activity[];
 }
 
-export function addActivity(activity: Omit<Activity, 'id' | 'timestamp'>): Activity {
-  const activities = getActivities();
-  const newActivity: Activity = {
-    ...activity,
-    id: crypto.randomUUID(),
-    timestamp: new Date().toISOString(),
-  };
-  activities.unshift(newActivity);
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(activities));
-  return newActivity;
+export async function addActivity(activity: { member_name: string; type: ActivityType; description: string }): Promise<Activity> {
+  const { data, error } = await supabase
+    .from('activities')
+    .insert(activity)
+    .select()
+    .single();
+  if (error) throw error;
+  return data as Activity;
 }
 
-export function deleteActivity(id: string) {
-  const activities = getActivities().filter(a => a.id !== id);
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(activities));
+export async function deleteActivity(id: string) {
+  const { error } = await supabase.from('activities').delete().eq('id', id);
+  if (error) throw error;
 }
