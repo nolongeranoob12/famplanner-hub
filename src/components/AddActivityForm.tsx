@@ -49,14 +49,16 @@ export function AddActivityForm({ onAdd }: AddActivityFormProps) {
   return (
     <form onSubmit={handleSubmit} className="bg-card rounded-2xl p-5 space-y-4 border border-border shadow-sm">
       <h3 className="font-bold text-lg">What's happening? 🎉</h3>
-      <Input
-        placeholder="Who? (e.g. Mom, Dad, Sarah...)"
-        value={memberName}
-        onChange={e => setMemberName(e.target.value)}
-        className="rounded-xl h-11"
-        maxLength={50}
-        required
-      />
+      <Select value={memberName} onValueChange={setMemberName}>
+        <SelectTrigger className="rounded-xl h-11">
+          <SelectValue placeholder="Who?" />
+        </SelectTrigger>
+        <SelectContent>
+          {['Dad', 'Mom', 'Jitsoon', 'Jityi', 'Jitbao', 'Ruimin'].map(name => (
+            <SelectItem key={name} value={name}>{name}</SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
       <Select value={type} onValueChange={(v) => setType(v as ActivityType)}>
         <SelectTrigger className="rounded-xl h-11">
           <SelectValue />
