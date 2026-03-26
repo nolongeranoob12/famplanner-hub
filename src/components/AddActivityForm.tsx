@@ -29,7 +29,7 @@ export function AddActivityForm({ onAdd }: AddActivityFormProps) {
       member_name: memberName.trim(),
       type,
       description: description.trim(),
-      activity_date: activityDate ? activityDate.toISOString() : undefined,
+      activity_date: activityDate ? `${activityDate.getFullYear()}-${String(activityDate.getMonth() + 1).padStart(2, '0')}-${String(activityDate.getDate()).padStart(2, '0')}` : undefined,
     });
     setMemberName('');
     setDescription('');
