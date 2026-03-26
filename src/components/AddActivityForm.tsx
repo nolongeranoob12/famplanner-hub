@@ -20,6 +20,7 @@ export function AddActivityForm({ onAdd }: AddActivityFormProps) {
   const [description, setDescription] = useState('');
   const [activityDate, setActivityDate] = useState<Date>();
   const [open, setOpen] = useState(false);
+  const [calendarOpen, setCalendarOpen] = useState(false);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -71,7 +72,7 @@ export function AddActivityForm({ onAdd }: AddActivityFormProps) {
           ))}
         </SelectContent>
       </Select>
-      <Popover>
+      <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
         <PopoverTrigger asChild>
           <Button
             variant="outline"
@@ -88,7 +89,10 @@ export function AddActivityForm({ onAdd }: AddActivityFormProps) {
           <Calendar
             mode="single"
             selected={activityDate}
-            onSelect={setActivityDate}
+            onSelect={(date) => {
+              setActivityDate(date);
+              setCalendarOpen(false);
+            }}
             initialFocus
             className={cn("p-3 pointer-events-auto")}
           />
