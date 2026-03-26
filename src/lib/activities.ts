@@ -12,14 +12,25 @@ export interface Activity {
   updated_at: string;
 }
 
-export const activityConfig: Record<ActivityType, { emoji: string; label: string; color: string }> = {
-  dinner: { emoji: '🍽️', label: 'Dinner Out', color: 'bg-orange-100 text-orange-700' },
-  sports: { emoji: '🏃', label: 'Sports', color: 'bg-green-100 text-green-700' },
-  errands: { emoji: '🛒', label: 'Errands', color: 'bg-blue-100 text-blue-700' },
-  travel: { emoji: '✈️', label: 'Travel', color: 'bg-purple-100 text-purple-700' },
-  movie: { emoji: '🎬', label: 'Movie', color: 'bg-pink-100 text-pink-700' },
-  hangout: { emoji: '☕', label: 'Hangout', color: 'bg-yellow-100 text-yellow-700' },
-  other: { emoji: '📌', label: 'Other', color: 'bg-muted text-muted-foreground' },
+export const activityConfig: Record<ActivityType, { emoji: string; label: string; bgClass: string; textClass: string }> = {
+  dinner:  { emoji: '🍽️', label: 'Dinner Out', bgClass: 'bg-orange-50',  textClass: 'text-orange-600' },
+  sports:  { emoji: '🏃', label: 'Sports',     bgClass: 'bg-emerald-50', textClass: 'text-emerald-600' },
+  errands: { emoji: '🛒', label: 'Errands',    bgClass: 'bg-sky-50',     textClass: 'text-sky-600' },
+  travel:  { emoji: '✈️', label: 'Travel',      bgClass: 'bg-violet-50',  textClass: 'text-violet-600' },
+  movie:   { emoji: '🎬', label: 'Movie',       bgClass: 'bg-pink-50',    textClass: 'text-pink-600' },
+  hangout: { emoji: '☕', label: 'Hangout',     bgClass: 'bg-amber-50',   textClass: 'text-amber-600' },
+  other:   { emoji: '📌', label: 'Other',       bgClass: 'bg-muted',      textClass: 'text-muted-foreground' },
+};
+
+export const familyMembers = ['Dad', 'Mom', 'Jitsoon', 'Jityi', 'Jitbao', 'Ruimin'] as const;
+
+export const memberAvatars: Record<string, { color: string; emoji: string }> = {
+  Dad:     { color: 'bg-sky-500',    emoji: '👨' },
+  Mom:     { color: 'bg-rose-400',   emoji: '👩' },
+  Jitsoon: { color: 'bg-amber-500',  emoji: '😎' },
+  Jityi:   { color: 'bg-violet-500', emoji: '🦊' },
+  Jitbao:  { color: 'bg-emerald-500',emoji: '🐻' },
+  Ruimin:  { color: 'bg-pink-400',   emoji: '🌸' },
 };
 
 export async function getActivities(): Promise<Activity[]> {
