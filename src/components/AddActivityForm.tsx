@@ -20,6 +20,7 @@ export function AddActivityForm({ onAdd }: AddActivityFormProps) {
   const [description, setDescription] = useState('');
   const [activityDate, setActivityDate] = useState<Date>();
   const [open, setOpen] = useState(false);
+  const [calendarOpen, setCalendarOpen] = useState(false);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
