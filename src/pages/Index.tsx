@@ -24,10 +24,10 @@ export default function Index() {
     fetchActivities();
   }, [fetchActivities]);
 
-  const handleAdd = useCallback(async (data: { member_name: string; type: ActivityType; description: string; activity_date?: string }) => {
+  const handleAdd = useCallback(async (data: {member_name: string;type: ActivityType;description: string;activity_date?: string;}) => {
     try {
       const newActivity = await addActivity(data);
-      setActivities(prev => [newActivity, ...prev]);
+      setActivities((prev) => [newActivity, ...prev]);
       toast.success('Activity posted!');
     } catch {
       toast.error('Failed to post activity');
@@ -37,7 +37,7 @@ export default function Index() {
   const handleDelete = useCallback(async (id: string) => {
     try {
       await deleteActivity(id);
-      setActivities(prev => prev.filter(a => a.id !== id));
+      setActivities((prev) => prev.filter((a) => a.id !== id));
       toast.success('Activity removed');
     } catch {
       toast.error('Failed to delete activity');
@@ -45,7 +45,7 @@ export default function Index() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-orange-100">
       {/* Header */}
       <header className="sticky top-0 z-10 bg-background/80 backdrop-blur-xl border-b border-border/60">
         <div className="max-w-xl mx-auto px-5 py-4 flex items-center gap-4">
@@ -57,11 +57,11 @@ export default function Index() {
             <p className="text-xs text-muted-foreground mt-0.5">What's everyone up to today?</p>
           </div>
           <div className="ml-auto flex -space-x-2">
-            {['👨', '👩', '😎', '🦊', '🐻', '🌸'].map((emoji, i) => (
-              <div key={i} className="w-8 h-8 rounded-full bg-muted border-2 border-background flex items-center justify-center text-sm">
+            {['👨', '👩', '😎', '🦊', '🐻', '🌸'].map((emoji, i) =>
+            <div key={i} className="w-8 h-8 rounded-full bg-muted border-2 border-background flex items-center justify-center text-sm">
                 {emoji}
               </div>
-            ))}
+            )}
           </div>
         </div>
       </header>
@@ -71,23 +71,23 @@ export default function Index() {
         <AddActivityForm onAdd={handleAdd} />
 
         {/* Activities count */}
-        {!loading && activities.length > 0 && (
-          <div className="flex items-center gap-2 pt-2">
+        {!loading && activities.length > 0 &&
+        <div className="flex items-center gap-2 pt-2">
             <div className="h-px flex-1 bg-border" />
             <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
               {activities.length} {activities.length === 1 ? 'Activity' : 'Activities'}
             </span>
             <div className="h-px flex-1 bg-border" />
           </div>
-        )}
+        }
 
-        {loading ? (
-          <div className="flex flex-col items-center justify-center py-20 gap-3">
+        {loading ?
+        <div className="flex flex-col items-center justify-center py-20 gap-3">
             <Loader2 className="w-7 h-7 animate-spin text-primary" />
             <p className="text-sm text-muted-foreground">Loading activities…</p>
-          </div>
-        ) : activities.length === 0 ? (
-          <div className="text-center py-20">
+          </div> :
+        activities.length === 0 ?
+        <div className="text-center py-20">
             <div className="w-20 h-20 rounded-3xl bg-primary/10 flex items-center justify-center mx-auto mb-4">
               <span className="text-4xl">👨‍👩‍👧‍👦</span>
             </div>
@@ -95,15 +95,15 @@ export default function Index() {
             <p className="text-sm text-muted-foreground mt-1.5 max-w-[250px] mx-auto">
               Post what you're up to so the family knows!
             </p>
+          </div> :
+
+        <div className="space-y-3">
+            {activities.map((activity) =>
+          <ActivityCard key={activity.id} activity={activity} onDelete={handleDelete} />
+          )}
           </div>
-        ) : (
-          <div className="space-y-3">
-            {activities.map(activity => (
-              <ActivityCard key={activity.id} activity={activity} onDelete={handleDelete} />
-            ))}
-          </div>
-        )}
+        }
       </main>
-    </div>
-  );
+    </div>);
+
 }
