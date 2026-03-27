@@ -9,10 +9,11 @@ interface ActivityCardProps {
   currentUser?: string;
 }
 
-export function ActivityCard({ activity, onDelete }: ActivityCardProps) {
+export function ActivityCard({ activity, onDelete, currentUser }: ActivityCardProps) {
   const config = activityConfig[activity.type];
   const avatar = memberAvatars[activity.member_name] ?? { color: 'bg-primary', emoji: '👤' };
   const wasEdited = activity.updated_at !== activity.created_at;
+  const isOwner = currentUser === activity.member_name;
 
   return (
     <div className="bg-card rounded-2xl border border-border shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden group">
