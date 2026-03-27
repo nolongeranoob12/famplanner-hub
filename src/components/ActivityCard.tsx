@@ -6,6 +6,7 @@ import { formatDistanceToNow, format } from 'date-fns';
 interface ActivityCardProps {
   activity: Activity;
   onDelete: (id: string) => void;
+  currentUser?: string;
 }
 
 export function ActivityCard({ activity, onDelete }: ActivityCardProps) {
