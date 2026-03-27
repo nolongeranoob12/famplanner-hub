@@ -75,31 +75,14 @@ export function AddActivityForm({ onAdd, currentUser }: AddActivityFormProps) {
       </div>
 
       <div className="p-5 space-y-4">
-        {/* Family member selector */}
+        {/* Current user display */}
         <div className="space-y-2">
-          <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Who</label>
-          <div className="flex gap-2 flex-wrap">
-            {familyMembers.map((name) => {
-              const avatar = memberAvatars[name];
-              const isSelected = memberName === name;
-              return (
-                <button
-                  key={name}
-                  type="button"
-                  onClick={() => setMemberName(name)}
-                  className={cn(
-                    "flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-semibold transition-all duration-200 border",
-                    isSelected ?
-                    "border-primary bg-primary/10 text-foreground shadow-sm scale-[1.02]" :
-                    "border-border bg-card text-muted-foreground hover:border-primary/40 hover:bg-primary/5"
-                  )}>
-                  
-                  <span className="text-base">{avatar.emoji}</span>
-                  {name}
-                </button>);
-
-            })}
+          <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Posting as</label>
+          <div className="flex items-center gap-2 px-3 py-2 rounded-xl border border-primary bg-primary/10">
+            <span className="text-base">{memberAvatars[currentUser]?.emoji ?? '👤'}</span>
+            <span className="font-bold text-foreground text-sm">{currentUser}</span>
           </div>
+        </div>
         </div>
 
         {/* Activity type */}
