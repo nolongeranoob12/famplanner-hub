@@ -11,6 +11,7 @@ import { cn } from '@/lib/utils';
 
 interface AddActivityFormProps {
   onAdd: (data: {member_name: string;type: ActivityType;description: string;activity_date?: string;}) => void;
+  currentUser: string;
 }
 
 export function AddActivityForm({ onAdd }: AddActivityFormProps) {
