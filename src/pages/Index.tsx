@@ -5,7 +5,8 @@ import { ActivityCard } from '@/components/ActivityCard';
 import { ActivityCalendar } from '@/components/ActivityCalendar';
 import { NamePicker } from '@/components/NamePicker';
 import { getActivities, addActivity, deleteActivity, type Activity, type ActivityType, memberAvatars } from '@/lib/activities';
-import { Loader2, Home, LogOut } from 'lucide-react';
+import { useActivityNotifications } from '@/hooks/useActivityNotifications';
+import { Loader2, Home, LogOut, Bell } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 
@@ -14,6 +15,9 @@ export default function Index() {
   const [loading, setLoading] = useState(true);
   const [currentUser, setCurrentUser] = useState<string | null>(() => localStorage.getItem('chau_family_user'));
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+
+  // Enable browser notifications for activity changes
+  useActivityNotifications(currentUser);
 
   const fetchActivities = useCallback(async () => {
     try {
@@ -86,7 +90,23 @@ export default function Index() {
             <div className={`w-9 h-9 rounded-xl flex items-center justify-center text-base ${avatar.color} shadow-sm`}>
               {avatar.emoji}
             </div>
-            <span className="text-sm font-bold text-foreground">{currentUser}</span>
+            <span className="text-sm font-bold text-foreground hidden sm:inline">{currentUser}</span>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="rounded-xl h-8 w-8 text-muted-foreground"
+              onClick={() => {
+                if ('Notification' in window) {
+                  Notification.requestPermission().then((p) => {
+                    toast(p === 'granted' ? '🔔 Notifications enabled!' : 'Notifications blocked');
+                  });
+                } else {
+                  toast.error('Notifications not supported');
+                }
+              }}
+            >
+              <Bell className="w-4 h-4" />
+            </Button>
             <Button variant="ghost" size="icon" className="rounded-xl h-8 w-8 text-muted-foreground" onClick={handleLogout}>
               <LogOut className="w-4 h-4" />
             </Button>
