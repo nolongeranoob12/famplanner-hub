@@ -14,8 +14,8 @@ interface AddActivityFormProps {
   currentUser: string;
 }
 
-export function AddActivityForm({ onAdd }: AddActivityFormProps) {
-  const [memberName, setMemberName] = useState('');
+export function AddActivityForm({ onAdd, currentUser }: AddActivityFormProps) {
+  const memberName = currentUser;
   const [type, setType] = useState<ActivityType>('dinner');
   const [description, setDescription] = useState('');
   const [activityDate, setActivityDate] = useState<Date>();
