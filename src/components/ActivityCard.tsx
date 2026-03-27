@@ -6,12 +6,14 @@ import { formatDistanceToNow, format } from 'date-fns';
 interface ActivityCardProps {
   activity: Activity;
   onDelete: (id: string) => void;
+  currentUser?: string;
 }
 
-export function ActivityCard({ activity, onDelete }: ActivityCardProps) {
+export function ActivityCard({ activity, onDelete, currentUser }: ActivityCardProps) {
   const config = activityConfig[activity.type];
   const avatar = memberAvatars[activity.member_name] ?? { color: 'bg-primary', emoji: '👤' };
   const wasEdited = activity.updated_at !== activity.created_at;
+  const isOwner = currentUser === activity.member_name;
 
   return (
     <div className="bg-card rounded-2xl border border-border shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden group">
@@ -55,15 +57,17 @@ export function ActivityCard({ activity, onDelete }: ActivityCardProps) {
             </div>
           </div>
 
-          {/* Delete button */}
-          <Button
-            variant="ghost"
-            size="icon"
-            className="opacity-0 group-hover:opacity-100 transition-opacity shrink-0 text-muted-foreground hover:text-destructive rounded-xl h-9 w-9"
-            onClick={() => onDelete(activity.id)}
-          >
-            <Trash2 className="w-4 h-4" />
-          </Button>
+          {/* Delete button - only visible to owner */}
+          {isOwner && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="opacity-0 group-hover:opacity-100 transition-opacity shrink-0 text-muted-foreground hover:text-destructive rounded-xl h-9 w-9"
+              onClick={() => onDelete(activity.id)}
+            >
+              <Trash2 className="w-4 h-4" />
+            </Button>
+          )}
         </div>
       </div>
     </div>

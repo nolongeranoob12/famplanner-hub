@@ -5,16 +5,17 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { activityConfig, familyMembers, memberAvatars, type ActivityType } from '@/lib/activities';
+import { activityConfig, memberAvatars, type ActivityType } from '@/lib/activities';
 import { Plus, CalendarIcon, X, Sparkles } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface AddActivityFormProps {
   onAdd: (data: {member_name: string;type: ActivityType;description: string;activity_date?: string;}) => void;
+  currentUser: string;
 }
 
-export function AddActivityForm({ onAdd }: AddActivityFormProps) {
-  const [memberName, setMemberName] = useState('');
+export function AddActivityForm({ onAdd, currentUser }: AddActivityFormProps) {
+  const memberName = currentUser;
   const [type, setType] = useState<ActivityType>('dinner');
   const [description, setDescription] = useState('');
   const [activityDate, setActivityDate] = useState<Date>();
@@ -30,7 +31,7 @@ export function AddActivityForm({ onAdd }: AddActivityFormProps) {
       description: description.trim(),
       activity_date: activityDate ? `${activityDate.getFullYear()}-${String(activityDate.getMonth() + 1).padStart(2, '0')}-${String(activityDate.getDate()).padStart(2, '0')}` : undefined
     });
-    setMemberName('');
+    // member is auto-set from currentUser
     setDescription('');
     setType('dinner');
     setActivityDate(undefined);
@@ -74,30 +75,12 @@ export function AddActivityForm({ onAdd }: AddActivityFormProps) {
       </div>
 
       <div className="p-5 space-y-4">
-        {/* Family member selector */}
+        {/* Current user display */}
         <div className="space-y-2">
-          <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Who</label>
-          <div className="flex gap-2 flex-wrap">
-            {familyMembers.map((name) => {
-              const avatar = memberAvatars[name];
-              const isSelected = memberName === name;
-              return (
-                <button
-                  key={name}
-                  type="button"
-                  onClick={() => setMemberName(name)}
-                  className={cn(
-                    "flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-semibold transition-all duration-200 border",
-                    isSelected ?
-                    "border-primary bg-primary/10 text-foreground shadow-sm scale-[1.02]" :
-                    "border-border bg-card text-muted-foreground hover:border-primary/40 hover:bg-primary/5"
-                  )}>
-                  
-                  <span className="text-base">{avatar.emoji}</span>
-                  {name}
-                </button>);
-
-            })}
+          <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Posting as</label>
+          <div className="flex items-center gap-2 px-3 py-2 rounded-xl border border-primary bg-primary/10">
+            <span className="text-base">{memberAvatars[currentUser]?.emoji ?? '👤'}</span>
+            <span className="font-bold text-foreground text-sm">{currentUser}</span>
           </div>
         </div>
 
