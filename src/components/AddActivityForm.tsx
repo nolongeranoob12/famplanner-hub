@@ -83,7 +83,6 @@ export function AddActivityForm({ onAdd, currentUser }: AddActivityFormProps) {
             <span className="font-bold text-foreground text-sm">{currentUser}</span>
           </div>
         </div>
-        </div>
 
         {/* Activity type */}
         <div className="space-y-2">
