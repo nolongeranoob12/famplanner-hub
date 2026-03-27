@@ -90,7 +90,23 @@ export default function Index() {
             <div className={`w-9 h-9 rounded-xl flex items-center justify-center text-base ${avatar.color} shadow-sm`}>
               {avatar.emoji}
             </div>
-            <span className="text-sm font-bold text-foreground">{currentUser}</span>
+            <span className="text-sm font-bold text-foreground hidden sm:inline">{currentUser}</span>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="rounded-xl h-8 w-8 text-muted-foreground"
+              onClick={() => {
+                if ('Notification' in window) {
+                  Notification.requestPermission().then((p) => {
+                    toast(p === 'granted' ? '🔔 Notifications enabled!' : 'Notifications blocked');
+                  });
+                } else {
+                  toast.error('Notifications not supported');
+                }
+              }}
+            >
+              <Bell className="w-4 h-4" />
+            </Button>
             <Button variant="ghost" size="icon" className="rounded-xl h-8 w-8 text-muted-foreground" onClick={handleLogout}>
               <LogOut className="w-4 h-4" />
             </Button>
