@@ -5,7 +5,8 @@ import { ActivityCard } from '@/components/ActivityCard';
 import { ActivityCalendar } from '@/components/ActivityCalendar';
 import { NamePicker } from '@/components/NamePicker';
 import { getActivities, addActivity, deleteActivity, type Activity, type ActivityType, memberAvatars } from '@/lib/activities';
-import { Loader2, Home, LogOut } from 'lucide-react';
+import { useActivityNotifications } from '@/hooks/useActivityNotifications';
+import { Loader2, Home, LogOut, Bell } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 
