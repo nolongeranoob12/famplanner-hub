@@ -16,6 +16,9 @@ export default function Index() {
   const [currentUser, setCurrentUser] = useState<string | null>(() => localStorage.getItem('chau_family_user'));
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
 
+  // Enable browser notifications for activity changes
+  useActivityNotifications(currentUser);
+
   const fetchActivities = useCallback(async () => {
     try {
       const data = await getActivities();
