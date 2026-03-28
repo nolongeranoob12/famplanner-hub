@@ -113,13 +113,12 @@ export function AddActivityForm({ onAdd, currentUser }: AddActivityFormProps) {
         {/* Date & Time picker */}
         <div className="space-y-2">
           <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Date & Time</label>
-          <div className="flex gap-2">
-            <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
+          <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
               <PopoverTrigger asChild>
                 <Button
                   variant="outline"
                   className={cn(
-                    "flex-1 rounded-xl h-11 justify-start text-left font-normal border-border",
+                    "w-full rounded-xl h-11 justify-start text-left font-normal border-border",
                     !activityDate && "text-muted-foreground"
                   )}>
                   <CalendarIcon className="mr-2 h-4 w-4" />
@@ -138,22 +137,21 @@ export function AddActivityForm({ onAdd, currentUser }: AddActivityFormProps) {
                   className={cn("p-3 pointer-events-auto")} />
               </PopoverContent>
             </Popover>
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-2 mt-2">
               <Input
                 type="time"
                 value={timeStart}
                 onChange={(e) => setTimeStart(e.target.value)}
-                className="w-[120px] rounded-xl h-11 border-border text-sm"
+                className="flex-1 rounded-xl h-11 border-border text-sm"
               />
               <span className="text-muted-foreground text-sm">to</span>
               <Input
                 type="time"
                 value={timeEnd}
                 onChange={(e) => setTimeEnd(e.target.value)}
-                className="w-[120px] rounded-xl h-11 border-border text-sm"
+                className="flex-1 rounded-xl h-11 border-border text-sm"
               />
             </div>
-          </div>
         </div>
 
         {/* Description */}
