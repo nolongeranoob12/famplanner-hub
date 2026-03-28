@@ -8,6 +8,7 @@ export interface Activity {
   type: ActivityType;
   description: string;
   activity_date: string | null;
+  activity_time: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -42,7 +43,7 @@ export async function getActivities(): Promise<Activity[]> {
   return (data ?? []) as Activity[];
 }
 
-export async function addActivity(activity: { member_name: string; type: ActivityType; description: string; activity_date?: string }): Promise<Activity> {
+export async function addActivity(activity: { member_name: string; type: ActivityType; description: string; activity_date?: string; activity_time?: string }): Promise<Activity> {
   const { data, error } = await supabase
     .from('activities')
     .insert(activity)

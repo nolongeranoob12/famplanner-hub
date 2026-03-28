@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { format } from 'date-fns';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Calendar } from '@/components/ui/calendar';
@@ -10,7 +11,7 @@ import { Plus, CalendarIcon, X, Sparkles } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface AddActivityFormProps {
-  onAdd: (data: {member_name: string;type: ActivityType;description: string;activity_date?: string;}) => void;
+  onAdd: (data: {member_name: string;type: ActivityType;description: string;activity_date?: string;activity_time?: string;}) => void;
   currentUser: string;
 }
 
@@ -19,6 +20,7 @@ export function AddActivityForm({ onAdd, currentUser }: AddActivityFormProps) {
   const [type, setType] = useState<ActivityType>('dinner');
   const [description, setDescription] = useState('');
   const [activityDate, setActivityDate] = useState<Date>();
+  const [activityTime, setActivityTime] = useState('');
   const [open, setOpen] = useState(false);
   const [calendarOpen, setCalendarOpen] = useState(false);
 
@@ -29,12 +31,13 @@ export function AddActivityForm({ onAdd, currentUser }: AddActivityFormProps) {
       member_name: memberName.trim(),
       type,
       description: description.trim(),
-      activity_date: activityDate ? `${activityDate.getFullYear()}-${String(activityDate.getMonth() + 1).padStart(2, '0')}-${String(activityDate.getDate()).padStart(2, '0')}` : undefined
+      activity_date: activityDate ? `${activityDate.getFullYear()}-${String(activityDate.getMonth() + 1).padStart(2, '0')}-${String(activityDate.getDate()).padStart(2, '0')}` : undefined,
+      activity_time: activityTime || undefined
     });
-    // member is auto-set from currentUser
     setDescription('');
     setType('dinner');
     setActivityDate(undefined);
+    setActivityTime('');
     setOpen(false);
   };
 
@@ -104,35 +107,42 @@ export function AddActivityForm({ onAdd, currentUser }: AddActivityFormProps) {
           </Select>
         </div>
 
-        {/* Date picker */}
+        {/* Date & Time picker */}
         <div className="space-y-2">
-          <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Date</label>
-          <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
-            <PopoverTrigger asChild>
-              <Button
-                variant="outline"
-                className={cn(
-                  "w-full rounded-xl h-11 justify-start text-left font-normal border-border",
-                  !activityDate && "text-muted-foreground"
-                )}>
-                
-                <CalendarIcon className="mr-2 h-4 w-4" />
-                {activityDate ? format(activityDate, "PPP") : "Pick a date (optional)"}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0" align="start">
-              <Calendar
-                mode="single"
-                selected={activityDate}
-                onSelect={(date) => {
-                  setActivityDate(date);
-                  setCalendarOpen(false);
-                }}
-                initialFocus
-                className={cn("p-3 pointer-events-auto")} />
-              
-            </PopoverContent>
-          </Popover>
+          <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Date & Time</label>
+          <div className="flex gap-2">
+            <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  className={cn(
+                    "flex-1 rounded-xl h-11 justify-start text-left font-normal border-border",
+                    !activityDate && "text-muted-foreground"
+                  )}>
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {activityDate ? format(activityDate, "PPP") : "Pick a date"}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar
+                  mode="single"
+                  selected={activityDate}
+                  onSelect={(date) => {
+                    setActivityDate(date);
+                    setCalendarOpen(false);
+                  }}
+                  initialFocus
+                  className={cn("p-3 pointer-events-auto")} />
+              </PopoverContent>
+            </Popover>
+            <Input
+              type="time"
+              value={activityTime}
+              onChange={(e) => setActivityTime(e.target.value)}
+              className="w-[130px] rounded-xl h-11 border-border"
+              placeholder="Time"
+            />
+          </div>
         </div>
 
         {/* Description */}
