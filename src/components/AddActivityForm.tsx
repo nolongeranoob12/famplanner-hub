@@ -20,7 +20,8 @@ export function AddActivityForm({ onAdd, currentUser }: AddActivityFormProps) {
   const [type, setType] = useState<ActivityType>('dinner');
   const [description, setDescription] = useState('');
   const [activityDate, setActivityDate] = useState<Date>();
-  const [activityTime, setActivityTime] = useState('');
+  const [timeStart, setTimeStart] = useState('');
+  const [timeEnd, setTimeEnd] = useState('');
   const [open, setOpen] = useState(false);
   const [calendarOpen, setCalendarOpen] = useState(false);
 
