@@ -11,7 +11,7 @@ import { Plus, CalendarIcon, X, Sparkles } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface AddActivityFormProps {
-  onAdd: (data: {member_name: string;type: ActivityType;description: string;activity_date?: string;activity_time?: string;}) => void;
+  onAdd: (data: {member_name: string;type: ActivityType;description: string;activity_date?: string;time_start?: string;time_end?: string;}) => void;
   currentUser: string;
 }
 
@@ -20,7 +20,8 @@ export function AddActivityForm({ onAdd, currentUser }: AddActivityFormProps) {
   const [type, setType] = useState<ActivityType>('dinner');
   const [description, setDescription] = useState('');
   const [activityDate, setActivityDate] = useState<Date>();
-  const [activityTime, setActivityTime] = useState('');
+  const [timeStart, setTimeStart] = useState('');
+  const [timeEnd, setTimeEnd] = useState('');
   const [open, setOpen] = useState(false);
   const [calendarOpen, setCalendarOpen] = useState(false);
 
@@ -32,12 +33,14 @@ export function AddActivityForm({ onAdd, currentUser }: AddActivityFormProps) {
       type,
       description: description.trim(),
       activity_date: activityDate ? `${activityDate.getFullYear()}-${String(activityDate.getMonth() + 1).padStart(2, '0')}-${String(activityDate.getDate()).padStart(2, '0')}` : undefined,
-      activity_time: activityTime || undefined
+      time_start: timeStart || undefined,
+      time_end: timeEnd || undefined
     });
     setDescription('');
     setType('dinner');
     setActivityDate(undefined);
-    setActivityTime('');
+    setTimeStart('');
+    setTimeEnd('');
     setOpen(false);
   };
 
@@ -135,13 +138,21 @@ export function AddActivityForm({ onAdd, currentUser }: AddActivityFormProps) {
                   className={cn("p-3 pointer-events-auto")} />
               </PopoverContent>
             </Popover>
-            <Input
-              type="time"
-              value={activityTime}
-              onChange={(e) => setActivityTime(e.target.value)}
-              className="w-[130px] rounded-xl h-11 border-border"
-              placeholder="Time"
-            />
+            <div className="flex items-center gap-1">
+              <Input
+                type="time"
+                value={timeStart}
+                onChange={(e) => setTimeStart(e.target.value)}
+                className="w-[120px] rounded-xl h-11 border-border text-sm"
+              />
+              <span className="text-muted-foreground text-sm">to</span>
+              <Input
+                type="time"
+                value={timeEnd}
+                onChange={(e) => setTimeEnd(e.target.value)}
+                className="w-[120px] rounded-xl h-11 border-border text-sm"
+              />
+            </div>
           </div>
         </div>
 
