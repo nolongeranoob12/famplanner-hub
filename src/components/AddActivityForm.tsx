@@ -31,12 +31,13 @@ export function AddActivityForm({ onAdd, currentUser }: AddActivityFormProps) {
       member_name: memberName.trim(),
       type,
       description: description.trim(),
-      activity_date: activityDate ? `${activityDate.getFullYear()}-${String(activityDate.getMonth() + 1).padStart(2, '0')}-${String(activityDate.getDate()).padStart(2, '0')}` : undefined
+      activity_date: activityDate ? `${activityDate.getFullYear()}-${String(activityDate.getMonth() + 1).padStart(2, '0')}-${String(activityDate.getDate()).padStart(2, '0')}` : undefined,
+      activity_time: activityTime || undefined
     });
-    // member is auto-set from currentUser
     setDescription('');
     setType('dinner');
     setActivityDate(undefined);
+    setActivityTime('');
     setOpen(false);
   };
 
