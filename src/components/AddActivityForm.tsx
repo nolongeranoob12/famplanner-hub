@@ -39,7 +39,8 @@ export function AddActivityForm({ onAdd, currentUser }: AddActivityFormProps) {
     setDescription('');
     setType('dinner');
     setActivityDate(undefined);
-    setActivityTime('');
+    setTimeStart('');
+    setTimeEnd('');
     setOpen(false);
   };
 

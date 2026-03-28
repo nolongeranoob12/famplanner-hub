@@ -9,6 +9,8 @@ export interface Activity {
   description: string;
   activity_date: string | null;
   activity_time: string | null;
+  time_start: string | null;
+  time_end: string | null;
   created_at: string;
   updated_at: string;
 }
