@@ -138,13 +138,21 @@ export function AddActivityForm({ onAdd, currentUser }: AddActivityFormProps) {
                   className={cn("p-3 pointer-events-auto")} />
               </PopoverContent>
             </Popover>
-            <Input
-              type="time"
-              value={activityTime}
-              onChange={(e) => setActivityTime(e.target.value)}
-              className="w-[130px] rounded-xl h-11 border-border"
-              placeholder="Time"
-            />
+            <div className="flex items-center gap-1">
+              <Input
+                type="time"
+                value={timeStart}
+                onChange={(e) => setTimeStart(e.target.value)}
+                className="w-[120px] rounded-xl h-11 border-border text-sm"
+              />
+              <span className="text-muted-foreground text-sm">to</span>
+              <Input
+                type="time"
+                value={timeEnd}
+                onChange={(e) => setTimeEnd(e.target.value)}
+                className="w-[120px] rounded-xl h-11 border-border text-sm"
+              />
+            </div>
           </div>
         </div>
 

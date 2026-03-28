@@ -45,7 +45,7 @@ export async function getActivities(): Promise<Activity[]> {
   return (data ?? []) as Activity[];
 }
 
-export async function addActivity(activity: { member_name: string; type: ActivityType; description: string; activity_date?: string; activity_time?: string }): Promise<Activity> {
+export async function addActivity(activity: { member_name: string; type: ActivityType; description: string; activity_date?: string; time_start?: string; time_end?: string }): Promise<Activity> {
   const { data, error } = await supabase
     .from('activities')
     .insert(activity)

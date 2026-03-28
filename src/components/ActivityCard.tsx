@@ -45,8 +45,10 @@ export function ActivityCard({ activity, onDelete, currentUser }: ActivityCardPr
                 <div className="flex items-center gap-1.5 text-xs font-semibold text-primary">
                   <CalendarDays className="w-3.5 h-3.5" />
                   {format(new Date(activity.activity_date + 'T00:00:00'), 'EEE, MMM d, yyyy')}
-                  {activity.activity_time && (
-                    <span className="ml-1">at {activity.activity_time}</span>
+                  {activity.time_start && (
+                    <span className="ml-1">
+                      {activity.time_start}{activity.time_end ? ` – ${activity.time_end}` : ''}
+                    </span>
                   )}
                 </div>
               )}
