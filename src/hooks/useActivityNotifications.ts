@@ -8,7 +8,6 @@ export function useActivityNotifications(currentUser: string | null) {
   useEffect(() => {
     if (!currentUser) return;
 
-    // Request notification permission
     if ('Notification' in window && Notification.permission === 'default') {
       Notification.requestPermission().then((p) => {
         permissionGranted.current = p === 'granted';
@@ -22,38 +21,56 @@ export function useActivityNotifications(currentUser: string | null) {
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'activities' },
-        (payload) => {
-          if (!('Notification' in window) || Notification.permission !== 'granted') return;
-
+        async (payload) => {
           const record = payload.new as Record<string, unknown> | undefined;
-          if (!record) return;
+          const oldRecord = payload.old as Record<string, unknown> | undefined;
 
-          const memberName = record.member_name as string;
-          const description = record.description as string;
-          const emoji = memberAvatars[memberName]?.emoji ?? '👤';
-
+          let memberName = '';
+          let description = '';
           let title = '';
-          if (payload.eventType === 'INSERT') {
+
+          if (payload.eventType === 'INSERT' && record) {
+            memberName = record.member_name as string;
+            description = record.description as string;
+            const emoji = memberAvatars[memberName]?.emoji ?? '👤';
             title = `${emoji} ${memberName} posted an activity`;
-          } else if (payload.eventType === 'UPDATE') {
+          } else if (payload.eventType === 'UPDATE' && record) {
+            memberName = record.member_name as string;
+            description = record.description as string;
+            const emoji = memberAvatars[memberName]?.emoji ?? '👤';
             title = `${emoji} ${memberName} edited an activity`;
-          } else if (payload.eventType === 'DELETE') {
-            const old = payload.old as Record<string, unknown>;
-            const oldName = old.member_name as string;
-            const oldEmoji = memberAvatars[oldName]?.emoji ?? '👤';
-            title = `${oldEmoji} ${oldName} removed an activity`;
+          } else if (payload.eventType === 'DELETE' && oldRecord) {
+            memberName = oldRecord.member_name as string;
+            const oldEmoji = memberAvatars[memberName]?.emoji ?? '👤';
+            title = `${oldEmoji} ${memberName} removed an activity`;
           }
 
-          if (title) {
+          if (!title) return;
+
+          // Show in-app notification if tab is visible
+          if ('Notification' in window && Notification.permission === 'granted') {
             try {
               new Notification(title, {
                 body: description || undefined,
                 icon: '/pwa-192.png',
-                tag: `activity-${record.id ?? 'deleted'}`,
+                tag: `activity-${(record?.id as string) ?? 'deleted'}`,
               });
             } catch {
-              // Notification constructor may fail in some contexts
+              // may fail in some contexts
             }
+          }
+
+          // Also trigger push notifications for offline users via edge function
+          try {
+            await supabase.functions.invoke('send-push', {
+              body: {
+                title,
+                body: description || 'Check the family board!',
+                exclude_member: currentUser,
+              },
+            });
+          } catch (err) {
+            console.error('Failed to send push notifications:', err);
           }
         }
       )

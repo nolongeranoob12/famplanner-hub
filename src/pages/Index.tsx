@@ -6,6 +6,7 @@ import { ActivityCalendar } from '@/components/ActivityCalendar';
 import { NamePicker } from '@/components/NamePicker';
 import { getActivities, addActivity, deleteActivity, type Activity, type ActivityType, memberAvatars } from '@/lib/activities';
 import { useActivityNotifications } from '@/hooks/useActivityNotifications';
+import { usePushSubscription } from '@/hooks/usePushSubscription';
 import { Loader2, Home, LogOut, Bell } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
@@ -18,6 +19,8 @@ export default function Index() {
 
   // Enable browser notifications for activity changes
   useActivityNotifications(currentUser);
+  // Subscribe to push notifications for background alerts
+  usePushSubscription(currentUser);
 
   const fetchActivities = useCallback(async () => {
     try {
