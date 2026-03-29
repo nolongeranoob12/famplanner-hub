@@ -28,13 +28,13 @@ export const activityConfig: Record<ActivityType, { emoji: string; label: string
 
 export const familyMembers = ['Dad', 'Mom', 'Jitsoon', 'Jityi', 'Jitbao', 'Ruimin'] as const;
 
-export const memberAvatars: Record<string, { color: string; emoji: string }> = {
-  Dad:     { color: 'bg-sky-500',    emoji: '👨' },
-  Mom:     { color: 'bg-rose-400',   emoji: '👩' },
-  Jitsoon: { color: 'bg-amber-500',  emoji: '😎' },
-  Jityi:   { color: 'bg-violet-500', emoji: '🦊' },
-  Jitbao:  { color: 'bg-emerald-500',emoji: '🐻' },
-  Ruimin:  { color: 'bg-pink-400',   emoji: '🌸' },
+export const memberAvatars: Record<string, { color: string; emoji: string; phone?: string }> = {
+  Dad:     { color: 'bg-sky-500',    emoji: '👨', phone: '' },
+  Mom:     { color: 'bg-rose-400',   emoji: '👩', phone: '' },
+  Jitsoon: { color: 'bg-amber-500',  emoji: '😎', phone: '' },
+  Jityi:   { color: 'bg-violet-500', emoji: '🦊', phone: '' },
+  Jitbao:  { color: 'bg-emerald-500',emoji: '🐻', phone: '' },
+  Ruimin:  { color: 'bg-pink-400',   emoji: '🌸', phone: '' },
 };
 
 export async function getActivities(): Promise<Activity[]> {

@@ -1,5 +1,5 @@
 import { activityConfig, memberAvatars, type Activity } from '@/lib/activities';
-import { Trash2, CalendarDays, Clock } from 'lucide-react';
+import { Trash2, CalendarDays, Clock, Phone, MessageCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { formatDistanceToNow, format } from 'date-fns';
 
@@ -34,6 +34,27 @@ export function ActivityCard({ activity, onDelete, currentUser }: ActivityCardPr
               <span className={`text-xs px-2.5 py-1 rounded-full font-semibold ${config.bgClass} ${config.textClass}`}>
                 {config.emoji} {config.label}
               </span>
+              {/* Call & WhatsApp buttons */}
+              {avatar.phone && (
+                <span className="flex items-center gap-1 ml-auto">
+                  <a
+                    href={`tel:${avatar.phone}`}
+                    className="inline-flex items-center justify-center w-7 h-7 rounded-lg bg-sky-100 text-sky-600 hover:bg-sky-200 transition-colors"
+                    title={`Call ${activity.member_name}`}
+                  >
+                    <Phone className="w-3.5 h-3.5" />
+                  </a>
+                  <a
+                    href={`https://wa.me/${avatar.phone.replace(/[^0-9]/g, '')}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center justify-center w-7 h-7 rounded-lg bg-emerald-100 text-emerald-600 hover:bg-emerald-200 transition-colors"
+                    title={`WhatsApp ${activity.member_name}`}
+                  >
+                    <MessageCircle className="w-3.5 h-3.5" />
+                  </a>
+                </span>
+              )}
             </div>
 
             {/* Description */}
