@@ -19,6 +19,8 @@ export default function Index() {
 
   // Enable browser notifications for activity changes
   useActivityNotifications(currentUser);
+  // Subscribe to push notifications for background alerts
+  usePushSubscription(currentUser);
 
   const fetchActivities = useCallback(async () => {
     try {
