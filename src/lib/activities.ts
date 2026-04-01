@@ -47,6 +47,16 @@ export async function getActivities(): Promise<Activity[]> {
   return (data ?? []) as Activity[];
 }
 
+async function sendPush(title: string, body: string, excludeMember?: string) {
+  try {
+    await supabase.functions.invoke('send-push', {
+      body: { title, body, exclude_member: excludeMember },
+    });
+  } catch (e) {
+    console.warn('Push send failed (non-critical):', e);
+  }
+}
+
 export async function addActivity(activity: { member_name: string; type: ActivityType; description: string; activity_date?: string; time_start?: string; time_end?: string }): Promise<Activity> {
   const { data, error } = await supabase
     .from('activities')
@@ -54,7 +64,14 @@ export async function addActivity(activity: { member_name: string; type: Activit
     .select()
     .single();
   if (error) throw error;
-  return data as Activity;
+  const result = data as Activity;
+  const cfg = activityConfig[result.type as ActivityType];
+  sendPush(
+    `${result.member_name} posted an activity`,
+    `${cfg?.emoji ?? '📌'} ${result.description}`,
+    result.member_name,
+  );
+  return result;
 }
 
 export async function deleteActivity(id: string) {
