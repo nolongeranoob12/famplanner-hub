@@ -35,7 +35,16 @@ export default function Index() {
   }, []);
 
   useEffect(() => {
-    if (currentUser) fetchActivities();
+    if (currentUser) {
+      fetchActivities();
+      // Clear app badge when user opens the app
+      if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+        navigator.serviceWorker.controller.postMessage('clear-badge');
+      }
+      if ('clearAppBadge' in navigator) {
+        (navigator as any).clearAppBadge();
+      }
+    }
   }, [currentUser, fetchActivities]);
 
   const handleSelectUser = (name: string) => {

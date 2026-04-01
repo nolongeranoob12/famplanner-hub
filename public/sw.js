@@ -1,5 +1,8 @@
 // Service Worker for Chau Family PWA — push notifications + badge
 
+// Badge count stored in a simple variable (resets on SW restart, but good enough)
+let badgeCount = 0;
+
 self.addEventListener("push", (event) => {
   let data = { title: "Chau Family", body: "Someone updated an activity" };
   try {
@@ -8,6 +11,8 @@ self.addEventListener("push", (event) => {
     // use defaults
   }
 
+  badgeCount += 1;
+
   event.waitUntil(
     Promise.all([
       self.registration.showNotification(data.title, {
@@ -15,18 +20,18 @@ self.addEventListener("push", (event) => {
         icon: "/pwa-192.png",
         badge: "/pwa-192.png",
         vibrate: [200, 100, 200],
-        tag: "activity-update",
+        tag: "activity-update-" + Date.now(),
         renotify: true,
+        data: { url: "/" },
       }),
-      // Set app badge count
-      navigator.setAppBadge ? navigator.setAppBadge(1) : Promise.resolve(),
+      navigator.setAppBadge ? navigator.setAppBadge(badgeCount) : Promise.resolve(),
     ])
   );
 });
 
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
-  // Clear badge when user taps notification
+  badgeCount = 0;
   if (navigator.clearAppBadge) navigator.clearAppBadge();
   event.waitUntil(
     clients.matchAll({ type: "window" }).then((clientList) => {
@@ -36,4 +41,12 @@ self.addEventListener("notificationclick", (event) => {
       if (clients.openWindow) return clients.openWindow("/");
     })
   );
+});
+
+// Clear badge when user opens/focuses the app
+self.addEventListener("message", (event) => {
+  if (event.data === "clear-badge") {
+    badgeCount = 0;
+    if (navigator.clearAppBadge) navigator.clearAppBadge();
+  }
 });
