@@ -94,6 +94,7 @@ export default function Index() {
             <div className={`w-9 h-9 rounded-xl flex items-center justify-center text-base ${avatar.color} shadow-sm`}>
               {avatar.emoji}
             </div>
+            <PhoneSettings currentUser={currentUser} />
             <span className="text-sm font-bold text-foreground hidden sm:inline">{currentUser}</span>
             <Button
               variant="ghost"

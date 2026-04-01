@@ -26,6 +26,8 @@ self.addEventListener("push", (event) => {
 
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
+  // Clear badge when user taps notification
+  if (navigator.clearAppBadge) navigator.clearAppBadge();
   event.waitUntil(
     clients.matchAll({ type: "window" }).then((clientList) => {
       for (const client of clientList) {
