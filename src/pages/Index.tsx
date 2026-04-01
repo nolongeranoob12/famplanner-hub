@@ -116,6 +116,11 @@ export default function Index() {
                   return;
                 }
 
+                if (!('reason' in result)) {
+                  toast('This device/browser does not support push notifications yet.');
+                  return;
+                }
+
                 if (result.reason === 'preview') {
                   toast('Notifications only work on the published app, not the preview.');
                   return;
