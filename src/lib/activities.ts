@@ -23,6 +23,7 @@ export const activityConfig: Record<ActivityType, { emoji: string; label: string
   movie:   { emoji: '🎬', label: 'Movie',       bgClass: 'bg-pink-50',    textClass: 'text-pink-600' },
   hangout: { emoji: '☕', label: 'Hangout',     bgClass: 'bg-amber-50',   textClass: 'text-amber-600' },
   cooking: { emoji: '🍳', label: 'Cooking',     bgClass: 'bg-red-50',     textClass: 'text-red-600' },
+  work:    { emoji: '💼', label: 'Work',        bgClass: 'bg-slate-50',   textClass: 'text-slate-600' },
   other:   { emoji: '📌', label: 'Other',       bgClass: 'bg-muted',      textClass: 'text-muted-foreground' },
 };
 
