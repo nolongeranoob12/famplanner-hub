@@ -1,4 +1,4 @@
-// Service Worker for Chau Family PWA — push notifications
+// Service Worker for Chau Family PWA — push notifications + badge
 
 self.addEventListener("push", (event) => {
   let data = { title: "Chau Family", body: "Someone updated an activity" };
@@ -9,14 +9,18 @@ self.addEventListener("push", (event) => {
   }
 
   event.waitUntil(
-    self.registration.showNotification(data.title, {
-      body: data.body,
-      icon: "/pwa-192.png",
-      badge: "/pwa-192.png",
-      vibrate: [200, 100, 200],
-      tag: "activity-update",
-      renotify: true,
-    })
+    Promise.all([
+      self.registration.showNotification(data.title, {
+        body: data.body,
+        icon: "/pwa-192.png",
+        badge: "/pwa-192.png",
+        vibrate: [200, 100, 200],
+        tag: "activity-update",
+        renotify: true,
+      }),
+      // Set app badge count
+      navigator.setAppBadge ? navigator.setAppBadge(1) : Promise.resolve(),
+    ])
   );
 });
 
