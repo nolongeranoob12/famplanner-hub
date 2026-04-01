@@ -43,21 +43,12 @@ function isBlockedEnv() {
   return isInIframe || isPreviewHost;
 }
 
-function isIos() {
-  return /iPad|iPhone|iPod/.test(window.navigator.userAgent);
-}
-
-function isStandaloneMode() {
-  return window.matchMedia('(display-mode: standalone)').matches || (window.navigator as Navigator & { standalone?: boolean }).standalone === true;
-}
-
 export function usePushSubscription(currentUser: string | null) {
   const [subscribed, setSubscribed] = useState<boolean | null>(null);
 
   const doSubscribe = useCallback(async (): Promise<SubscribeResult> => {
     if (!currentUser) return { ok: false, reason: 'no-user' };
     if (isBlockedEnv()) return { ok: false, reason: 'preview' };
-    if (isIos() && !isStandaloneMode()) return { ok: false, reason: 'ios-home-screen' };
     if (!('serviceWorker' in navigator) || !('PushManager' in window) || !('Notification' in window)) {
       return { ok: false, reason: 'unsupported' };
     }
@@ -123,11 +114,6 @@ export function usePushSubscription(currentUser: string | null) {
 
   useEffect(() => {
     if (!currentUser || isBlockedEnv()) return;
-
-    if (isIos() && !isStandaloneMode()) {
-      setSubscribed(false);
-      return;
-    }
 
     if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
       setSubscribed(false);
