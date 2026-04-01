@@ -106,47 +106,7 @@ export default function Index() {
             </div>
             <PhoneSettings currentUser={currentUser} />
             <span className="text-sm font-bold text-foreground hidden sm:inline">{currentUser}</span>
-            <Button
-              variant="ghost"
-              size="icon"
-              className={`rounded-xl h-8 w-8 ${subscribed ? 'text-primary' : 'text-muted-foreground'}`}
-              onClick={async () => {
-                const result = await subscribePush();
-                if (result.ok) {
-                  toast.success('🔔 Notifications enabled!');
-                  return;
-                }
-
-                if (!('reason' in result)) {
-                  toast('This device/browser does not support push notifications yet.');
-                  return;
-                }
-
-                if (result.reason === 'preview') {
-                  toast('Notifications only work on the published app, not the preview.');
-                  return;
-                }
-
-                if (result.reason === 'ios-home-screen') {
-                  toast('On iPhone, add the published app to Home Screen and open it from the app icon first.');
-                  return;
-                }
-
-                if (result.reason === 'blocked') {
-                  toast('Notifications are blocked for this app. Please enable them in your phone settings.');
-                  return;
-                }
-
-                if (result.reason === 'save-failed') {
-                  toast('Permission was allowed, but your device could not be saved. Please try again.');
-                  return;
-                }
-
-                toast('This device/browser does not support push notifications yet.');
-              }}
-            >
-              <Bell className={`w-4 h-4 ${subscribed ? 'fill-primary' : ''}`} />
-            </Button>
+            <NotificationBell currentUser={currentUser} />
             <Button variant="ghost" size="icon" className="rounded-xl h-8 w-8 text-muted-foreground" onClick={handleLogout}>
               <LogOut className="w-4 h-4" />
             </Button>
