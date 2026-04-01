@@ -50,6 +50,41 @@ export type Database = {
         }
         Relationships: []
       }
+      activity_log: {
+        Row: {
+          action: string
+          activity_id: string | null
+          created_at: string
+          description: string | null
+          id: string
+          member_name: string
+        }
+        Insert: {
+          action: string
+          activity_id?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          member_name: string
+        }
+        Update: {
+          action?: string
+          activity_id?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          member_name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "activity_log_activity_id_fkey"
+            columns: ["activity_id"]
+            isOneToOne: false
+            referencedRelation: "activities"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       member_profiles: {
         Row: {
           created_at: string
@@ -73,6 +108,38 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      notifications: {
+        Row: {
+          created_at: string
+          id: string
+          is_read: boolean
+          log_id: string
+          member_name: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          log_id: string
+          member_name: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          log_id?: string
+          member_name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notifications_log_id_fkey"
+            columns: ["log_id"]
+            isOneToOne: false
+            referencedRelation: "activity_log"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       push_subscriptions: {
         Row: {
