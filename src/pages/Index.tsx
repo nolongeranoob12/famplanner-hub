@@ -110,12 +110,38 @@ export default function Index() {
               size="icon"
               className={`rounded-xl h-8 w-8 ${subscribed ? 'text-primary' : 'text-muted-foreground'}`}
               onClick={async () => {
-                const ok = await subscribePush();
-                if (ok) {
+                const result = await subscribePush();
+                if (result.ok) {
                   toast.success('🔔 Notifications enabled!');
-                } else {
-                  toast('Notifications may be blocked or unsupported. Try on the published app.');
+                  return;
                 }
+
+                if (!('reason' in result)) {
+                  toast('This device/browser does not support push notifications yet.');
+                  return;
+                }
+
+                if (result.reason === 'preview') {
+                  toast('Notifications only work on the published app, not the preview.');
+                  return;
+                }
+
+                if (result.reason === 'ios-home-screen') {
+                  toast('On iPhone, add the published app to Home Screen and open it from the app icon first.');
+                  return;
+                }
+
+                if (result.reason === 'blocked') {
+                  toast('Notifications are blocked for this app. Please enable them in your phone settings.');
+                  return;
+                }
+
+                if (result.reason === 'save-failed') {
+                  toast('Permission was allowed, but your device could not be saved. Please try again.');
+                  return;
+                }
+
+                toast('This device/browser does not support push notifications yet.');
               }}
             >
               <Bell className={`w-4 h-4 ${subscribed ? 'fill-primary' : ''}`} />
