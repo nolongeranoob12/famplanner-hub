@@ -99,18 +99,17 @@ export default function Index() {
             <Button
               variant="ghost"
               size="icon"
-              className="rounded-xl h-8 w-8 text-muted-foreground"
-              onClick={() => {
-                if ('Notification' in window) {
-                  Notification.requestPermission().then((p) => {
-                    toast(p === 'granted' ? '🔔 Notifications enabled!' : 'Notifications blocked');
-                  });
+              className={`rounded-xl h-8 w-8 ${subscribed ? 'text-primary' : 'text-muted-foreground'}`}
+              onClick={async () => {
+                const ok = await subscribePush();
+                if (ok) {
+                  toast.success('🔔 Notifications enabled!');
                 } else {
-                  toast.error('Notifications not supported');
+                  toast('Notifications may be blocked or unsupported. Try on the published app.');
                 }
               }}
             >
-              <Bell className="w-4 h-4" />
+              <Bell className={`w-4 h-4 ${subscribed ? 'fill-primary' : ''}`} />
             </Button>
             <Button variant="ghost" size="icon" className="rounded-xl h-8 w-8 text-muted-foreground" onClick={handleLogout}>
               <LogOut className="w-4 h-4" />
