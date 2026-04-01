@@ -94,7 +94,7 @@ export function ActivityCard({ activity, onDelete, currentUser }: ActivityCardPr
             <Button
               variant="ghost"
               size="icon"
-              className="opacity-0 group-hover:opacity-100 transition-opacity shrink-0 text-muted-foreground hover:text-destructive rounded-xl h-9 w-9"
+              className="sm:opacity-0 sm:group-hover:opacity-100 transition-opacity shrink-0 text-muted-foreground hover:text-destructive rounded-xl h-9 w-9"
               onClick={() => onDelete(activity.id)}
             >
               <Trash2 className="w-4 h-4" />
