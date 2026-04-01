@@ -1,0 +1,2 @@
+ALTER TABLE public.activities DROP CONSTRAINT activities_type_check;
+ALTER TABLE public.activities ADD CONSTRAINT activities_type_check CHECK (type = ANY (ARRAY['dinner','sports','errands','travel','movie','hangout','cooking','work','other']));
