@@ -1,4 +1,5 @@
-import { activityConfig, memberAvatars, type Activity } from '@/lib/activities';
+import { useState, useEffect } from 'react';
+import { activityConfig, memberAvatars, getMemberPhone, type Activity } from '@/lib/activities';
 import { Trash2, CalendarDays, Clock, Phone, MessageCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { formatDistanceToNow, format } from 'date-fns';
