@@ -4,6 +4,7 @@ import { AddActivityForm } from '@/components/AddActivityForm';
 import { ActivityCard } from '@/components/ActivityCard';
 import { ActivityCalendar } from '@/components/ActivityCalendar';
 import { NamePicker } from '@/components/NamePicker';
+import { PhoneSettings } from '@/components/PhoneSettings';
 import { getActivities, addActivity, deleteActivity, type Activity, type ActivityType, memberAvatars } from '@/lib/activities';
 import { useActivityNotifications } from '@/hooks/useActivityNotifications';
 import { usePushSubscription } from '@/hooks/usePushSubscription';
@@ -93,6 +94,7 @@ export default function Index() {
             <div className={`w-9 h-9 rounded-xl flex items-center justify-center text-base ${avatar.color} shadow-sm`}>
               {avatar.emoji}
             </div>
+            <PhoneSettings currentUser={currentUser} />
             <span className="text-sm font-bold text-foreground hidden sm:inline">{currentUser}</span>
             <Button
               variant="ghost"

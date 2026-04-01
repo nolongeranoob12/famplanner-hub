@@ -1,4 +1,5 @@
-import { activityConfig, memberAvatars, type Activity } from '@/lib/activities';
+import { useState, useEffect } from 'react';
+import { activityConfig, memberAvatars, getMemberPhone, type Activity } from '@/lib/activities';
 import { Trash2, CalendarDays, Clock, Phone, MessageCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { formatDistanceToNow, format } from 'date-fns';
@@ -14,6 +15,11 @@ export function ActivityCard({ activity, onDelete, currentUser }: ActivityCardPr
   const avatar = memberAvatars[activity.member_name] ?? { color: 'bg-primary', emoji: '👤' };
   const wasEdited = activity.updated_at !== activity.created_at;
   const isOwner = currentUser === activity.member_name;
+  const [phone, setPhone] = useState('');
+
+  useEffect(() => {
+    getMemberPhone(activity.member_name).then(setPhone);
+  }, [activity.member_name]);
 
   return (
     <div className="bg-card rounded-2xl border border-border shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden group">
@@ -35,17 +41,17 @@ export function ActivityCard({ activity, onDelete, currentUser }: ActivityCardPr
                 {config.emoji} {config.label}
               </span>
               {/* Call & WhatsApp buttons */}
-              {avatar.phone && (
+              {phone && (
                 <span className="flex items-center gap-1 ml-auto">
                   <a
-                    href={`tel:${avatar.phone}`}
+                    href={`tel:${phone}`}
                     className="inline-flex items-center justify-center w-7 h-7 rounded-lg bg-sky-100 text-sky-600 hover:bg-sky-200 transition-colors"
                     title={`Call ${activity.member_name}`}
                   >
                     <Phone className="w-3.5 h-3.5" />
                   </a>
                   <a
-                    href={`https://wa.me/${avatar.phone.replace(/[^0-9]/g, '')}`}
+                    href={`https://wa.me/${phone.replace(/[^0-9]/g, '')}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="inline-flex items-center justify-center w-7 h-7 rounded-lg bg-emerald-100 text-emerald-600 hover:bg-emerald-200 transition-colors"

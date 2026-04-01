@@ -1,6 +1,6 @@
 import { supabase } from '@/integrations/supabase/client';
 
-export type ActivityType = 'dinner' | 'sports' | 'errands' | 'travel' | 'movie' | 'hangout' | 'cooking' | 'other';
+export type ActivityType = 'dinner' | 'sports' | 'errands' | 'travel' | 'movie' | 'hangout' | 'cooking' | 'work' | 'other';
 
 export interface Activity {
   id: string;
@@ -23,6 +23,7 @@ export const activityConfig: Record<ActivityType, { emoji: string; label: string
   movie:   { emoji: '🎬', label: 'Movie',       bgClass: 'bg-pink-50',    textClass: 'text-pink-600' },
   hangout: { emoji: '☕', label: 'Hangout',     bgClass: 'bg-amber-50',   textClass: 'text-amber-600' },
   cooking: { emoji: '🍳', label: 'Cooking',     bgClass: 'bg-red-50',     textClass: 'text-red-600' },
+  work:    { emoji: '💼', label: 'Work',        bgClass: 'bg-slate-50',   textClass: 'text-slate-600' },
   other:   { emoji: '📌', label: 'Other',       bgClass: 'bg-muted',      textClass: 'text-muted-foreground' },
 };
 
@@ -59,4 +60,18 @@ export async function addActivity(activity: { member_name: string; type: Activit
 export async function deleteActivity(id: string) {
   const { error } = await supabase.from('activities').delete().eq('id', id);
   if (error) throw error;
+}
+
+// ── Member profiles (phone numbers) ────────────────────────────────
+
+export async function getMemberPhone(memberName: string): Promise<string> {
+  const { data } = await (supabase as any).from('member_profiles').select('phone').eq('member_name', memberName).maybeSingle();
+  return data?.phone ?? '';
+}
+
+export async function setMemberPhone(memberName: string, phone: string): Promise<void> {
+  await (supabase as any).from('member_profiles').upsert(
+    { member_name: memberName, phone },
+    { onConflict: 'member_name' }
+  );
 }

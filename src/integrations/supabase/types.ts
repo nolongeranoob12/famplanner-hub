@@ -50,6 +50,30 @@ export type Database = {
         }
         Relationships: []
       }
+      member_profiles: {
+        Row: {
+          created_at: string
+          id: string
+          member_name: string
+          phone: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          member_name: string
+          phone?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          member_name?: string
+          phone?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       push_subscriptions: {
         Row: {
           auth: string
