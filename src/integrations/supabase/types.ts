@@ -75,15 +75,7 @@ export type Database = {
           id?: string
           member_name?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "activity_log_activity_id_fkey"
-            columns: ["activity_id"]
-            isOneToOne: false
-            referencedRelation: "activities"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       member_profiles: {
         Row: {
