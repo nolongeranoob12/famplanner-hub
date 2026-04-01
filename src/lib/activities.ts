@@ -61,3 +61,17 @@ export async function deleteActivity(id: string) {
   const { error } = await supabase.from('activities').delete().eq('id', id);
   if (error) throw error;
 }
+
+// ── Member profiles (phone numbers) ────────────────────────────────
+
+export async function getMemberPhone(memberName: string): Promise<string> {
+  const { data } = await (supabase as any).from('member_profiles').select('phone').eq('member_name', memberName).maybeSingle();
+  return data?.phone ?? '';
+}
+
+export async function setMemberPhone(memberName: string, phone: string): Promise<void> {
+  await (supabase as any).from('member_profiles').upsert(
+    { member_name: memberName, phone },
+    { onConflict: 'member_name' }
+  );
+}
