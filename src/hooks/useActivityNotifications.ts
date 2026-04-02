@@ -60,18 +60,8 @@ export function useActivityNotifications(currentUser: string | null) {
             }
           }
 
-          // Also trigger push notifications for offline users via edge function
-          try {
-            await supabase.functions.invoke('send-push', {
-              body: {
-                title,
-                body: description || 'Check the family board!',
-                exclude_member: currentUser,
-              },
-            });
-          } catch (err) {
-            console.error('Failed to send push notifications:', err);
-          }
+          // Push notifications are now sent server-side via the database trigger
+          // using pg_net, so they work even when no one has the app open
 
           // Update app badge for all members via the notifications table count
           // (badge sync happens automatically via useNotifications hook)
