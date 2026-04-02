@@ -45,8 +45,19 @@ self.addEventListener("notificationclick", (event) => {
 
 // Clear badge when user opens/focuses the app
 self.addEventListener("message", (event) => {
-  if (event.data === "clear-badge") {
+  if (event.data === "clear-badge" || event.data?.type === "clear-badge") {
     badgeCount = 0;
     if (navigator.clearAppBadge) navigator.clearAppBadge();
+  }
+
+  if (event.data?.type === "set-badge-count") {
+    badgeCount = Math.max(0, Number(event.data.count) || 0);
+
+    if (badgeCount > 0) {
+      if (navigator.setAppBadge) event.waitUntil(navigator.setAppBadge(badgeCount));
+      return;
+    }
+
+    if (navigator.clearAppBadge) event.waitUntil(navigator.clearAppBadge());
   }
 });

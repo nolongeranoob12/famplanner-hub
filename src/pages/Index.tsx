@@ -9,7 +9,7 @@ import { getActivities, addActivity, deleteActivity, type Activity, type Activit
 import { useActivityNotifications } from '@/hooks/useActivityNotifications';
 import { usePushSubscription } from '@/hooks/usePushSubscription';
 import { NotificationBell } from '@/components/NotificationBell';
-import { Loader2, Home, LogOut, Bell } from 'lucide-react';
+import { Loader2, Home, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 
@@ -22,7 +22,7 @@ export default function Index() {
   // Enable browser notifications for activity changes
   useActivityNotifications(currentUser);
   // Subscribe to push notifications for background alerts
-  const { subscribed, subscribe: subscribePush } = usePushSubscription(currentUser);
+  usePushSubscription(currentUser);
 
   const fetchActivities = useCallback(async () => {
     try {
@@ -38,13 +38,6 @@ export default function Index() {
   useEffect(() => {
     if (currentUser) {
       fetchActivities();
-      // Clear app badge when user opens the app
-      if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
-        navigator.serviceWorker.controller.postMessage('clear-badge');
-      }
-      if ('clearAppBadge' in navigator) {
-        (navigator as any).clearAppBadge();
-      }
     }
   }, [currentUser, fetchActivities]);
 
