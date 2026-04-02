@@ -142,7 +142,7 @@ export function usePushSubscription(currentUser: string | null) {
     } catch (err) {
       console.error('[Push] Subscription failed:', err, (err as Error)?.message, (err as Error)?.stack);
       setSubscribed(false);
-      return { ok: false, reason: 'subscribe-failed' };
+      return { ok: false, reason: 'subscribe-failed', detail: (err as Error)?.message ?? String(err) };
     }
   }, [currentUser]);
 
