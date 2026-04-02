@@ -42,7 +42,8 @@ export function NotificationBell({ currentUser, pushSubscribed, onEnablePush }: 
       return;
     }
 
-    toast.error(subscribeErrorMessage[(result as { ok: false; reason: keyof typeof subscribeErrorMessage }).reason]);
+    const reason = (result as { ok: false; reason: keyof typeof subscribeErrorMessage }).reason;
+    toast.error(subscribeErrorMessage[reason] + ` (${reason})`);
   };
 
   return (
