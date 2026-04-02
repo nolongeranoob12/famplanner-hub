@@ -9,7 +9,7 @@ import { getActivities, addActivity, deleteActivity, type Activity, type Activit
 import { useActivityNotifications } from '@/hooks/useActivityNotifications';
 import { usePushSubscription } from '@/hooks/usePushSubscription';
 import { NotificationBell } from '@/components/NotificationBell';
-import { Loader2, Home, LogOut } from 'lucide-react';
+import { Loader2, LogOut, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 
@@ -19,9 +19,7 @@ export default function Index() {
   const [currentUser, setCurrentUser] = useState<string | null>(() => localStorage.getItem('chau_family_user'));
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
 
-  // Enable browser notifications for activity changes
   useActivityNotifications(currentUser);
-  // Subscribe to push notifications for background alerts
   const pushSubscription = usePushSubscription(currentUser);
 
   const fetchActivities = useCallback(async () => {
@@ -84,27 +82,27 @@ export default function Index() {
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="sticky top-0 z-10 bg-background/80 backdrop-blur-xl border-b border-border/60">
-        <div className="max-w-xl mx-auto px-5 py-4 flex items-center gap-4">
-          <div className="w-11 h-11 rounded-2xl bg-primary flex items-center justify-center shadow-md">
-            <Home className="w-5 h-5 text-primary-foreground" />
+      <header className="sticky top-0 z-10 bg-card/80 backdrop-blur-xl border-b border-border">
+        <div className="max-w-xl mx-auto px-4 py-3 flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center shadow-sm">
+            <Users className="w-5 h-5 text-primary-foreground" />
           </div>
-          <div className="flex-1">
-            <h1 className="text-xl font-extrabold text-foreground leading-tight tracking-tight">Chau Family</h1>
-            <p className="text-xs text-muted-foreground mt-0.5">What's everyone up to today?</p>
+          <div className="flex-1 min-w-0">
+            <h1 className="text-lg font-bold text-foreground leading-tight tracking-tight">Chau Family</h1>
+            <p className="text-[11px] text-muted-foreground">Family activity board</p>
           </div>
-          <div className="flex items-center gap-2">
-            <div className={`w-9 h-9 rounded-xl flex items-center justify-center text-base ${avatar.color} shadow-sm`}>
+          <div className="flex items-center gap-1.5">
+            <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-sm ${avatar.color} shadow-sm`}>
               {avatar.emoji}
             </div>
+            <span className="text-xs font-semibold text-foreground hidden sm:inline">{currentUser}</span>
             <PhoneSettings currentUser={currentUser} />
-            <span className="text-sm font-bold text-foreground hidden sm:inline">{currentUser}</span>
             <NotificationBell
               currentUser={currentUser}
               pushSubscribed={pushSubscription.subscribed}
               onEnablePush={pushSubscription.subscribe}
             />
-            <Button variant="ghost" size="icon" className="rounded-xl h-8 w-8 text-muted-foreground" onClick={handleLogout}>
+            <Button variant="ghost" size="icon" className="rounded-lg h-8 w-8 text-muted-foreground hover:text-foreground" onClick={handleLogout}>
               <LogOut className="w-4 h-4" />
             </Button>
           </div>
@@ -112,17 +110,15 @@ export default function Index() {
       </header>
 
       {/* Main */}
-      <main className="max-w-xl mx-auto px-5 py-6 space-y-4">
+      <main className="max-w-xl mx-auto px-4 py-5 space-y-4">
         <AddActivityForm onAdd={handleAdd} currentUser={currentUser} />
 
-        {/* Calendar */}
         {!loading && <ActivityCalendar activities={activities} selectedDate={selectedDate} onSelectDate={setSelectedDate} />}
 
-        {/* Activities count */}
         {!loading && filteredActivities.length > 0 && (
-          <div className="flex items-center gap-2 pt-2">
+          <div className="flex items-center gap-3 pt-1">
             <div className="h-px flex-1 bg-border" />
-            <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+            <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-widest">
               {filteredActivities.length} {filteredActivities.length === 1 ? 'Activity' : 'Activities'}
             </span>
             <div className="h-px flex-1 bg-border" />
@@ -131,18 +127,18 @@ export default function Index() {
 
         {loading ? (
           <div className="flex flex-col items-center justify-center py-20 gap-3">
-            <Loader2 className="w-7 h-7 animate-spin text-primary" />
-            <p className="text-sm text-muted-foreground">Loading activities…</p>
+            <Loader2 className="w-6 h-6 animate-spin text-primary" />
+            <p className="text-sm text-muted-foreground">Loading…</p>
           </div>
         ) : filteredActivities.length === 0 ? (
           <div className="text-center py-20">
-            <div className="w-20 h-20 rounded-3xl bg-primary/10 flex items-center justify-center mx-auto mb-4">
-              <span className="text-4xl">📅</span>
+            <div className="w-16 h-16 rounded-2xl bg-muted flex items-center justify-center mx-auto mb-3">
+              <span className="text-3xl">📅</span>
             </div>
-            <p className="text-foreground font-bold text-lg">
+            <p className="text-foreground font-semibold text-base">
               {selectedDate ? 'No activities on this day' : 'No activities yet'}
             </p>
-            <p className="text-sm text-muted-foreground mt-1.5 max-w-[250px] mx-auto">
+            <p className="text-sm text-muted-foreground mt-1 max-w-[240px] mx-auto">
               {selectedDate ? 'Try selecting a different date or post a new activity.' : 'Post what you\'re up to so the family knows!'}
             </p>
           </div>

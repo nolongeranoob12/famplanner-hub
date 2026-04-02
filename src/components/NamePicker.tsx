@@ -1,4 +1,5 @@
 import { familyMembers, memberAvatars } from '@/lib/activities';
+import { Users } from 'lucide-react';
 
 interface NamePickerProps {
   onSelect: (name: string) => void;
@@ -9,11 +10,11 @@ export function NamePicker({ onSelect }: NamePickerProps) {
     <div className="min-h-screen bg-background flex items-center justify-center p-6">
       <div className="text-center space-y-8 max-w-sm w-full">
         <div>
-          <div className="w-20 h-20 rounded-3xl bg-primary/10 flex items-center justify-center mx-auto mb-4">
-            <span className="text-4xl">👨‍👩‍👧‍👦</span>
+          <div className="w-16 h-16 rounded-2xl bg-primary flex items-center justify-center mx-auto mb-5 shadow-lg">
+            <Users className="w-7 h-7 text-primary-foreground" />
           </div>
-          <h1 className="text-2xl font-extrabold text-foreground">Who's here?</h1>
-          <p className="text-sm text-muted-foreground mt-1">Tap your name to continue</p>
+          <h1 className="text-2xl font-bold text-foreground tracking-tight">Welcome back</h1>
+          <p className="text-sm text-muted-foreground mt-1.5">Select your profile to continue</p>
         </div>
 
         <div className="grid grid-cols-2 gap-3">
@@ -23,12 +24,12 @@ export function NamePicker({ onSelect }: NamePickerProps) {
               <button
                 key={name}
                 onClick={() => onSelect(name)}
-                className="flex flex-col items-center gap-2 p-5 rounded-2xl border border-border bg-card hover:border-primary hover:bg-primary/5 transition-all duration-200 hover:scale-[1.03] active:scale-[0.97] shadow-sm"
+                className="flex flex-col items-center gap-2.5 p-5 rounded-xl border border-border bg-card hover:border-primary/50 hover:shadow-md transition-all duration-200 active:scale-[0.97]"
               >
-                <div className={`w-14 h-14 rounded-2xl flex items-center justify-center text-2xl ${avatar.color} shadow-md`}>
+                <div className={`w-12 h-12 rounded-xl flex items-center justify-center text-xl ${avatar.color} shadow-sm`}>
                   {avatar.emoji}
                 </div>
-                <span className="font-bold text-foreground text-sm">{name}</span>
+                <span className="font-semibold text-foreground text-sm">{name}</span>
               </button>
             );
           })}
