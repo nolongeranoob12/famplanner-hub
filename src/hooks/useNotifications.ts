@@ -15,6 +15,11 @@ export interface AppNotification {
   };
 }
 
+type BadgeNavigator = Navigator & {
+  setAppBadge?: (count?: number) => Promise<void>;
+  clearAppBadge?: () => Promise<void>;
+};
+
 export function useNotifications(currentUser: string | null) {
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -71,6 +76,22 @@ export function useNotifications(currentUser: string | null) {
       supabase.removeChannel(channel);
     };
   }, [currentUser, fetchNotifications]);
+
+  useEffect(() => {
+    const badgeNavigator = navigator as BadgeNavigator;
+    const serviceWorkerController = navigator.serviceWorker?.controller;
+
+    if (serviceWorkerController) {
+      serviceWorkerController.postMessage({ type: 'set-badge-count', count: unreadCount });
+    }
+
+    if (unreadCount > 0) {
+      badgeNavigator.setAppBadge?.(unreadCount).catch(() => undefined);
+      return;
+    }
+
+    badgeNavigator.clearAppBadge?.().catch(() => undefined);
+  }, [unreadCount]);
 
   const markAllRead = useCallback(async () => {
     if (!currentUser) return;

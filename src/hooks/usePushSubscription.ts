@@ -43,6 +43,13 @@ function isBlockedEnv() {
   return isInIframe || isPreviewHost;
 }
 
+async function ensureServiceWorkerRegistration() {
+  const existingRegistration = await navigator.serviceWorker.getRegistration('/');
+  if (existingRegistration) return existingRegistration;
+
+  return navigator.serviceWorker.register('/sw.js');
+}
+
 export function usePushSubscription(currentUser: string | null) {
   const [subscribed, setSubscribed] = useState<boolean | null>(null);
 
@@ -54,7 +61,7 @@ export function usePushSubscription(currentUser: string | null) {
     }
 
     try {
-      const registration = await navigator.serviceWorker.register('/sw.js');
+      const registration = await ensureServiceWorkerRegistration();
       await navigator.serviceWorker.ready;
 
       let sub = await registration.pushManager.getSubscription();
@@ -120,19 +127,32 @@ export function usePushSubscription(currentUser: string | null) {
       return;
     }
 
-    navigator.serviceWorker.ready
-      .then(async (reg) => {
-        const sub = await reg.pushManager.getSubscription();
+    let cancelled = false;
+
+    (async () => {
+      try {
+        const registration = await ensureServiceWorkerRegistration();
+        await navigator.serviceWorker.ready;
+
+        const sub = await registration.pushManager.getSubscription();
+        if (cancelled) return;
+
         setSubscribed(!!sub);
 
         if (!sub && Notification.permission === 'granted') {
           const result = await doSubscribe();
-          if (!result.ok) {
+          if (!result.ok && !cancelled) {
             setSubscribed(false);
           }
         }
-      })
-      .catch(() => setSubscribed(false));
+      } catch {
+        if (!cancelled) setSubscribed(false);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
   }, [currentUser, doSubscribe]);
 
   return { subscribed, subscribe: doSubscribe };
