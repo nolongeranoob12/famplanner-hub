@@ -4,20 +4,45 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useNotifications } from '@/hooks/useNotifications';
+import type { SubscribeResult } from '@/hooks/usePushSubscription';
 import { memberAvatars } from '@/lib/activities';
 import { formatDistanceToNow } from 'date-fns';
+import { toast } from 'sonner';
 
 interface NotificationBellProps {
   currentUser: string;
+  pushSubscribed: boolean | null;
+  onEnablePush: () => Promise<SubscribeResult>;
 }
 
-export function NotificationBell({ currentUser }: NotificationBellProps) {
+const subscribeErrorMessage: Record<Exclude<SubscribeResult, { ok: true }>['reason'], string> = {
+  'no-user': 'Please choose your name first.',
+  'preview': 'Open the published app to turn on phone notifications.',
+  'ios-home-screen': 'Open the Home Screen app to turn on phone notifications.',
+  'unsupported': 'This device/browser does not support background notifications here.',
+  'blocked': 'Notifications are blocked for this app. Please allow them in your browser settings.',
+  'save-failed': 'Notifications were allowed, but saving this phone failed. Please try again.',
+  'subscribe-failed': 'Could not register this phone for notifications. Please try again.',
+};
+
+export function NotificationBell({ currentUser, pushSubscribed, onEnablePush }: NotificationBellProps) {
   const { notifications, unreadCount, markAllRead, markRead } = useNotifications(currentUser);
 
   const actionEmoji: Record<string, string> = {
     created: '🆕',
     updated: '✏️',
     deleted: '🗑️',
+  };
+
+  const handleEnablePush = async () => {
+    const result = await onEnablePush();
+
+    if (result.ok) {
+      toast.success('Phone notifications are now on.');
+      return;
+    }
+
+    toast.error(subscribeErrorMessage[result.reason]);
   };
 
   return (
@@ -41,6 +66,16 @@ export function NotificationBell({ currentUser }: NotificationBellProps) {
             </Button>
           )}
         </div>
+        {pushSubscribed !== true && (
+          <div className="border-b border-border bg-muted/40 px-4 py-3 space-y-2">
+            <p className="text-xs text-muted-foreground">
+              Turn on phone alerts so you still get notified after closing the app.
+            </p>
+            <Button size="sm" className="w-full" onClick={handleEnablePush}>
+              Enable phone notifications
+            </Button>
+          </div>
+        )}
         <ScrollArea className="max-h-80">
           {notifications.length === 0 ? (
             <div className="py-8 text-center text-sm text-muted-foreground">
