@@ -12,17 +12,17 @@ export type SubscribeFailureReason =
   | 'save-failed'
   | 'subscribe-failed';
 
+export type SubscribeResult =
+  | { ok: true }
+  | { ok: false; reason: SubscribeFailureReason; detail?: string };
+
 function isIosNotStandalone() {
   const isIos = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
     (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
   if (!isIos) return false;
-  // On iOS, push is only available in standalone (Home Screen) mode
   return !('standalone' in navigator && (navigator as any).standalone);
 }
 
-export type SubscribeResult =
-  | { ok: true }
-  | { ok: false; reason: SubscribeFailureReason };
 
 function urlBase64ToUint8Array(base64String: string) {
   const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
@@ -142,7 +142,7 @@ export function usePushSubscription(currentUser: string | null) {
     } catch (err) {
       console.error('[Push] Subscription failed:', err, (err as Error)?.message, (err as Error)?.stack);
       setSubscribed(false);
-      return { ok: false, reason: 'subscribe-failed' };
+      return { ok: false, reason: 'subscribe-failed', detail: (err as Error)?.message ?? String(err) };
     }
   }, [currentUser]);
 
