@@ -72,6 +72,9 @@ export function useActivityNotifications(currentUser: string | null) {
           } catch (err) {
             console.error('Failed to send push notifications:', err);
           }
+
+          // Update app badge for all members via the notifications table count
+          // (badge sync happens automatically via useNotifications hook)
         }
       )
       .subscribe();

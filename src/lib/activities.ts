@@ -64,14 +64,7 @@ export async function addActivity(activity: { member_name: string; type: Activit
     .select()
     .single();
   if (error) throw error;
-  const result = data as Activity;
-  const cfg = activityConfig[result.type as ActivityType];
-  sendPush(
-    `${result.member_name} posted an activity`,
-    `${cfg?.emoji ?? '📌'} ${result.description}`,
-    result.member_name,
-  );
-  return result;
+  return data as Activity;
 }
 
 export async function deleteActivity(id: string) {
