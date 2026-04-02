@@ -67,6 +67,10 @@ export default function Index() {
     }
   }, []);
 
+  const handlePhotoUpdate = useCallback((id: string, imageUrl: string) => {
+    setActivities((prev) => prev.map((a) => a.id === id ? { ...a, image_url: imageUrl } : a));
+  }, []);
+
   if (!currentUser) {
     return <NamePicker onSelect={handleSelectUser} />;
   }
