@@ -8,7 +8,7 @@ export interface Activity {
   type: ActivityType;
   description: string;
   activity_date: string | null;
-  
+  image_url: string | null;
   time_start: string | null;
   time_end: string | null;
   created_at: string;
