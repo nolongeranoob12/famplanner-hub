@@ -32,6 +32,14 @@ function urlBase64ToUint8Array(base64String: string) {
   for (let i = 0; i < rawData.length; ++i) {
     outputArray[i] = rawData.charCodeAt(i);
   }
+
+  if (outputArray.length === 64) {
+    const normalizedKey = new Uint8Array(65);
+    normalizedKey[0] = 0x04;
+    normalizedKey.set(outputArray, 1);
+    return normalizedKey;
+  }
+
   return outputArray;
 }
 
