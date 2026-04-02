@@ -8,7 +8,7 @@ export interface Activity {
   type: ActivityType;
   description: string;
   activity_date: string | null;
-  image_url: string | null;
+  
   time_start: string | null;
   time_end: string | null;
   created_at: string;
@@ -57,24 +57,10 @@ async function sendPush(title: string, body: string, excludeMember?: string) {
   }
 }
 
-export async function addActivity(activity: { member_name: string; type: ActivityType; description: string; activity_date?: string; time_start?: string; time_end?: string; image?: File }): Promise<Activity> {
-  let image_url: string | null = null;
-
-  if (activity.image) {
-    const ext = activity.image.name.split('.').pop() || 'jpg';
-    const filePath = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
-    const { error: uploadError } = await supabase.storage
-      .from('activity-photos')
-      .upload(filePath, activity.image, { contentType: activity.image.type });
-    if (uploadError) throw uploadError;
-    const { data: urlData } = supabase.storage.from('activity-photos').getPublicUrl(filePath);
-    image_url = urlData.publicUrl;
-  }
-
-  const { image, ...rest } = activity;
+export async function addActivity(activity: { member_name: string; type: ActivityType; description: string; activity_date?: string; time_start?: string; time_end?: string }): Promise<Activity> {
   const { data, error } = await supabase
     .from('activities')
-    .insert({ ...rest, image_url })
+    .insert(activity)
     .select()
     .single();
   if (error) throw error;

@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState } from 'react';
 import { format } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -7,11 +7,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { activityConfig, memberAvatars, type ActivityType } from '@/lib/activities';
-import { Plus, CalendarIcon, X, Camera, ImagePlus } from 'lucide-react';
+import { Plus, CalendarIcon, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface AddActivityFormProps {
-  onAdd: (data: { member_name: string; type: ActivityType; description: string; activity_date?: string; time_start?: string; time_end?: string; image?: File }) => void;
+  onAdd: (data: { member_name: string; type: ActivityType; description: string; activity_date?: string; time_start?: string; time_end?: string }) => void;
   currentUser: string;
 }
 
@@ -23,26 +23,6 @@ export function AddActivityForm({ onAdd, currentUser }: AddActivityFormProps) {
   const [timeEnd, setTimeEnd] = useState('');
   const [open, setOpen] = useState(false);
   const [calendarOpen, setCalendarOpen] = useState(false);
-  const [imageFile, setImageFile] = useState<File | null>(null);
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const cameraInputRef = useRef<HTMLInputElement>(null);
-
-  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setImageFile(file);
-    const reader = new FileReader();
-    reader.onload = (ev) => setImagePreview(ev.target?.result as string);
-    reader.readAsDataURL(file);
-  };
-
-  const removeImage = () => {
-    setImageFile(null);
-    setImagePreview(null);
-    if (fileInputRef.current) fileInputRef.current.value = '';
-    if (cameraInputRef.current) cameraInputRef.current.value = '';
-  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -54,14 +34,12 @@ export function AddActivityForm({ onAdd, currentUser }: AddActivityFormProps) {
       activity_date: activityDate ? `${activityDate.getFullYear()}-${String(activityDate.getMonth() + 1).padStart(2, '0')}-${String(activityDate.getDate()).padStart(2, '0')}` : undefined,
       time_start: timeStart || undefined,
       time_end: timeEnd || undefined,
-      image: imageFile || undefined,
     });
     setDescription('');
     setType('dinner');
     setActivityDate(undefined);
     setTimeStart('');
     setTimeEnd('');
-    removeImage();
     setOpen(false);
   };
 
@@ -142,46 +120,6 @@ export function AddActivityForm({ onAdd, currentUser }: AddActivityFormProps) {
             <span className="text-muted-foreground text-xs">to</span>
             <Input type="time" value={timeEnd} onChange={(e) => setTimeEnd(e.target.value)} className="flex-1 rounded-lg h-10 text-sm" />
           </div>
-        </div>
-
-        {/* Photo */}
-        <div className="space-y-1.5">
-          <label className="text-xs font-medium text-muted-foreground">Photo</label>
-          {imagePreview ? (
-            <div className="relative rounded-lg overflow-hidden">
-              <img src={imagePreview} alt="Preview" className="w-full max-h-48 object-cover rounded-lg" />
-              <button
-                type="button"
-                onClick={removeImage}
-                className="absolute top-2 right-2 w-7 h-7 rounded-full bg-black/60 text-white flex items-center justify-center hover:bg-black/80 transition-colors"
-              >
-                <X className="w-3.5 h-3.5" />
-              </button>
-            </div>
-          ) : (
-            <div className="flex gap-2">
-              <input ref={cameraInputRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={handleImageSelect} />
-              <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleImageSelect} />
-              <Button
-                type="button"
-                variant="outline"
-                className="flex-1 rounded-lg h-10 text-sm gap-2"
-                onClick={() => cameraInputRef.current?.click()}
-              >
-                <Camera className="w-4 h-4" />
-                Camera
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                className="flex-1 rounded-lg h-10 text-sm gap-2"
-                onClick={() => fileInputRef.current?.click()}
-              >
-                <ImagePlus className="w-4 h-4" />
-                Gallery
-              </Button>
-            </div>
-          )}
         </div>
 
         {/* Description */}
