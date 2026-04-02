@@ -7,13 +7,13 @@ interface NamePickerProps {
 export function NamePicker({ onSelect }: NamePickerProps) {
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-6">
-      <div className="text-center space-y-10 max-w-md w-full">
-        <div className="space-y-3">
-          <div className="w-16 h-16 rounded-2xl bg-primary flex items-center justify-center mx-auto shadow-lg">
-            <span className="text-3xl">👨‍👩‍👧‍👦</span>
+      <div className="text-center space-y-8 max-w-sm w-full">
+        <div>
+          <div className="w-20 h-20 rounded-3xl bg-primary/10 flex items-center justify-center mx-auto mb-4">
+            <span className="text-4xl">👨‍👩‍👧‍👦</span>
           </div>
-          <h1 className="text-3xl font-extrabold text-foreground tracking-tight">Welcome back</h1>
-          <p className="text-sm text-muted-foreground">Select your name to continue</p>
+          <h1 className="text-2xl font-extrabold text-foreground">Who's here?</h1>
+          <p className="text-sm text-muted-foreground mt-1">Tap your name to continue</p>
         </div>
 
         <div className="grid grid-cols-2 gap-3">
@@ -23,12 +23,12 @@ export function NamePicker({ onSelect }: NamePickerProps) {
               <button
                 key={name}
                 onClick={() => onSelect(name)}
-                className="flex items-center gap-3 p-4 rounded-xl border border-border bg-card hover:border-primary/40 hover:shadow-md transition-all duration-200 active:scale-[0.98] text-left"
+                className="flex flex-col items-center gap-2 p-5 rounded-2xl border border-border bg-card hover:border-primary hover:bg-primary/5 transition-all duration-200 hover:scale-[1.03] active:scale-[0.97] shadow-sm"
               >
-                <div className={`w-11 h-11 rounded-xl flex items-center justify-center text-xl ${avatar.color} shadow-sm`}>
+                <div className={`w-14 h-14 rounded-2xl flex items-center justify-center text-2xl ${avatar.color} shadow-md`}>
                   {avatar.emoji}
                 </div>
-                <span className="font-semibold text-foreground text-sm">{name}</span>
+                <span className="font-bold text-foreground text-sm">{name}</span>
               </button>
             );
           })}
