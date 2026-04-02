@@ -1,25 +1,52 @@
-import { useState, useEffect } from 'react';
-import { activityConfig, memberAvatars, getMemberPhone, type Activity } from '@/lib/activities';
-import { Trash2, CalendarDays, Clock, Phone, MessageCircle } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { activityConfig, memberAvatars, getMemberPhone, uploadActivityPhoto, updateActivityPhoto, type Activity } from '@/lib/activities';
+import { Trash2, CalendarDays, Clock, Phone, MessageCircle, Camera, Image as ImageIcon, Loader2, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { formatDistanceToNow, format } from 'date-fns';
+import { toast } from 'sonner';
 
 interface ActivityCardProps {
   activity: Activity;
   onDelete: (id: string) => void;
+  onUpdate?: (id: string, imageUrl: string) => void;
   currentUser?: string;
 }
 
-export function ActivityCard({ activity, onDelete, currentUser }: ActivityCardProps) {
+export function ActivityCard({ activity, onDelete, onUpdate, currentUser }: ActivityCardProps) {
   const config = activityConfig[activity.type];
   const avatar = memberAvatars[activity.member_name] ?? { color: 'bg-primary', emoji: '👤' };
   const wasEdited = activity.updated_at !== activity.created_at;
   const isOwner = currentUser === activity.member_name;
   const [phone, setPhone] = useState('');
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     getMemberPhone(activity.member_name).then(setPhone);
   }, [activity.member_name]);
+
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error('Image must be under 10MB');
+      return;
+    }
+    setUploading(true);
+    try {
+      const url = await uploadActivityPhoto(file);
+      await updateActivityPhoto(activity.id, url);
+      onUpdate?.(activity.id, url);
+      toast.success('Photo added!');
+    } catch {
+      toast.error('Failed to upload photo');
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+      if (cameraInputRef.current) cameraInputRef.current.value = '';
+    }
+  };
 
   return (
     <div className="bg-card rounded-xl border border-border hover:border-border/80 hover:shadow-md transition-all duration-200 overflow-hidden group">
@@ -66,6 +93,39 @@ export function ActivityCard({ activity, onDelete, currentUser }: ActivityCardPr
             {activity.image_url && (
               <div className="mt-2 rounded-lg overflow-hidden border border-border">
                 <img src={activity.image_url} alt="Activity photo" className="w-full max-h-64 object-cover" loading="lazy" />
+              </div>
+            )}
+
+            {/* Add photo buttons for owner when no photo yet */}
+            {isOwner && !activity.image_url && (
+              <div className="mt-2">
+                <input ref={cameraInputRef} type="file" accept="image/*" capture="environment" onChange={handleFileSelect} className="hidden" />
+                <input ref={fileInputRef} type="file" accept="image/*" onChange={handleFileSelect} className="hidden" />
+                {uploading ? (
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground py-1">
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    Uploading…
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => cameraInputRef.current?.click()}
+                      className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-primary px-2.5 py-1.5 rounded-lg bg-secondary hover:bg-primary/10 transition-colors"
+                    >
+                      <Camera className="w-3.5 h-3.5" />
+                      Camera
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-primary px-2.5 py-1.5 rounded-lg bg-secondary hover:bg-primary/10 transition-colors"
+                    >
+                      <ImageIcon className="w-3.5 h-3.5" />
+                      Add Photo
+                    </button>
+                  </div>
+                )}
               </div>
             )}
 

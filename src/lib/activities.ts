@@ -66,6 +66,11 @@ export async function uploadActivityPhoto(file: File): Promise<string> {
   return data.publicUrl;
 }
 
+export async function updateActivityPhoto(id: string, imageUrl: string): Promise<void> {
+  const { error } = await supabase.from('activities').update({ image_url: imageUrl }).eq('id', id);
+  if (error) throw error;
+}
+
 export async function addActivity(activity: { member_name: string; type: ActivityType; description: string; activity_date?: string; time_start?: string; time_end?: string; image_url?: string }): Promise<Activity> {
   const { data, error } = await supabase
     .from('activities')
