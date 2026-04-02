@@ -94,15 +94,20 @@ export function usePushSubscription(currentUser: string | null) {
   const doSubscribe = useCallback(async (): Promise<SubscribeResult> => {
     if (!currentUser) return { ok: false, reason: 'no-user' };
     if (isBlockedEnv()) return { ok: false, reason: 'preview' };
+    if (isIosNotStandalone()) return { ok: false, reason: 'ios-home-screen' };
     if (!('serviceWorker' in navigator) || !('PushManager' in window) || !('Notification' in window)) {
+      console.warn('[Push] Unsupported:', { sw: 'serviceWorker' in navigator, push: 'PushManager' in window, notif: 'Notification' in window });
       return { ok: false, reason: 'unsupported' };
     }
 
     try {
+      console.log('[Push] Registering service worker...');
       const registration = await ensureServiceWorkerRegistration();
       await navigator.serviceWorker.ready;
+      console.log('[Push] Service worker ready');
 
       let sub = await registration.pushManager.getSubscription();
+      console.log('[Push] Existing subscription:', !!sub);
 
       if (!sub) {
         if (Notification.permission === 'denied') {
@@ -110,16 +115,20 @@ export function usePushSubscription(currentUser: string | null) {
           return { ok: false, reason: 'blocked' };
         }
 
+        console.log('[Push] Requesting permission, current:', Notification.permission);
         const permission = await Notification.requestPermission();
+        console.log('[Push] Permission result:', permission);
         if (permission !== 'granted') {
           setSubscribed(false);
           return { ok: false, reason: 'blocked' };
         }
 
+        console.log('[Push] Subscribing to push manager...');
         sub = await registration.pushManager.subscribe({
           userVisibleOnly: true,
           applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
         });
+        console.log('[Push] Subscribed successfully, endpoint:', sub.endpoint.substring(0, 50));
       }
 
       const saved = await saveSubscription(currentUser, sub);
@@ -131,7 +140,7 @@ export function usePushSubscription(currentUser: string | null) {
       setSubscribed(true);
       return { ok: true };
     } catch (err) {
-      console.error('Push subscription failed:', err);
+      console.error('[Push] Subscription failed:', err, (err as Error)?.message, (err as Error)?.stack);
       setSubscribed(false);
       return { ok: false, reason: 'subscribe-failed' };
     }
