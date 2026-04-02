@@ -23,9 +23,6 @@ function isIosNotStandalone() {
   return !('standalone' in navigator && (navigator as any).standalone);
 }
 
-export type SubscribeResult =
-  | { ok: true }
-  | { ok: false; reason: SubscribeFailureReason };
 
 function urlBase64ToUint8Array(base64String: string) {
   const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
