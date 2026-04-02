@@ -18,7 +18,7 @@ interface NotificationBellProps {
 const subscribeErrorMessage: Record<Exclude<SubscribeResult, { ok: true }>['reason'], string> = {
   'no-user': 'Please choose your name first.',
   'preview': 'Open the published app to turn on phone notifications.',
-  'ios-home-screen': 'Open the Home Screen app to turn on phone notifications.',
+  'ios-home-screen': 'On iPhone, tap Share → "Add to Home Screen", then open the app from your Home Screen to enable notifications.',
   'unsupported': 'This device/browser does not support background notifications here.',
   'blocked': 'Notifications are blocked for this app. Please allow them in your browser settings.',
   'save-failed': 'Notifications were allowed, but saving this phone failed. Please try again.',
