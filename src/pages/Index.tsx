@@ -144,7 +144,7 @@ export default function Index() {
         ) : (
           <div className="space-y-2.5">
             {filteredActivities.map((activity) => (
-              <ActivityCard key={activity.id} activity={activity} onDelete={handleDelete} currentUser={currentUser} />
+              <ActivityCard key={activity.id} activity={activity} onDelete={handleDelete} onUpdate={handlePhotoUpdate} currentUser={currentUser} />
             ))}
           </div>
         )}
