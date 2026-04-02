@@ -1,5 +1,6 @@
 // Service Worker for Chau Family PWA — push notifications + badge
 
+// This file supplements VitePWA's generated SW with push handling.
 // Badge count stored in a simple variable (resets on SW restart, but good enough)
 let badgeCount = 0;
 
