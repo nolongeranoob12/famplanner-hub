@@ -47,7 +47,7 @@ export default function Index() {
     setCurrentUser(null);
   };
 
-  const handleAdd = useCallback(async (data: { member_name: string; type: ActivityType; description: string; activity_date?: string; time_start?: string; time_end?: string; image_url?: string }) => {
+  const handleAdd = useCallback(async (data: { member_name: string; type: ActivityType; description: string; activity_date?: string; time_start?: string; time_end?: string }) => {
     try {
       const newActivity = await addActivity(data);
       setActivities((prev) => [newActivity, ...prev]);
@@ -65,10 +65,6 @@ export default function Index() {
     } catch {
       toast.error('Failed to delete activity');
     }
-  }, []);
-
-  const handlePhotoUpdate = useCallback((id: string, imageUrl: string) => {
-    setActivities((prev) => prev.map((a) => a.id === id ? { ...a, image_url: imageUrl } : a));
   }, []);
 
   if (!currentUser) {
@@ -144,7 +140,7 @@ export default function Index() {
         ) : (
           <div className="space-y-2.5">
             {filteredActivities.map((activity) => (
-              <ActivityCard key={activity.id} activity={activity} onDelete={handleDelete} onUpdate={handlePhotoUpdate} currentUser={currentUser} />
+              <ActivityCard key={activity.id} activity={activity} onDelete={handleDelete} currentUser={currentUser} />
             ))}
           </div>
         )}

@@ -20,7 +20,6 @@ export type Database = {
           created_at: string
           description: string
           id: string
-          image_url: string | null
           member_name: string
           time_end: string | null
           time_start: string | null
@@ -32,7 +31,6 @@ export type Database = {
           created_at?: string
           description: string
           id?: string
-          image_url?: string | null
           member_name: string
           time_end?: string | null
           time_start?: string | null
@@ -44,7 +42,6 @@ export type Database = {
           created_at?: string
           description?: string
           id?: string
-          image_url?: string | null
           member_name?: string
           time_end?: string | null
           time_start?: string | null

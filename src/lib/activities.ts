@@ -8,7 +8,7 @@ export interface Activity {
   type: ActivityType;
   description: string;
   activity_date: string | null;
-  image_url: string | null;
+  
   time_start: string | null;
   time_end: string | null;
   created_at: string;
@@ -57,21 +57,7 @@ async function sendPush(title: string, body: string, excludeMember?: string) {
   }
 }
 
-export async function uploadActivityPhoto(file: File): Promise<string> {
-  const ext = file.name.split('.').pop() || 'jpg';
-  const path = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
-  const { error } = await supabase.storage.from('activity-photos').upload(path, file);
-  if (error) throw error;
-  const { data } = supabase.storage.from('activity-photos').getPublicUrl(path);
-  return data.publicUrl;
-}
-
-export async function updateActivityPhoto(id: string, imageUrl: string): Promise<void> {
-  const { error } = await supabase.from('activities').update({ image_url: imageUrl }).eq('id', id);
-  if (error) throw error;
-}
-
-export async function addActivity(activity: { member_name: string; type: ActivityType; description: string; activity_date?: string; time_start?: string; time_end?: string; image_url?: string }): Promise<Activity> {
+export async function addActivity(activity: { member_name: string; type: ActivityType; description: string; activity_date?: string; time_start?: string; time_end?: string }): Promise<Activity> {
   const { data, error } = await supabase
     .from('activities')
     .insert(activity)
