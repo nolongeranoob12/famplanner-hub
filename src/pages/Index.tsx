@@ -47,7 +47,7 @@ export default function Index() {
     setCurrentUser(null);
   };
 
-  const handleAdd = useCallback(async (data: { member_name: string; type: ActivityType; description: string; activity_date?: string; time_start?: string; time_end?: string }) => {
+  const handleAdd = useCallback(async (data: { member_name: string; type: ActivityType; description: string; activity_date?: string; time_start?: string; time_end?: string; image_url?: string }) => {
     try {
       const newActivity = await addActivity(data);
       setActivities((prev) => [newActivity, ...prev]);

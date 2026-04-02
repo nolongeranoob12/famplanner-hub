@@ -62,6 +62,13 @@ export function ActivityCard({ activity, onDelete, currentUser }: ActivityCardPr
             {/* Description */}
             <p className="text-foreground/80 text-sm leading-relaxed mt-1.5">{activity.description}</p>
 
+            {/* Photo */}
+            {activity.image_url && (
+              <div className="mt-2 rounded-lg overflow-hidden border border-border">
+                <img src={activity.image_url} alt="Activity photo" className="w-full max-h-64 object-cover" loading="lazy" />
+              </div>
+            )}
+
             {/* Meta */}
             <div className="mt-2.5 flex items-center gap-3 flex-wrap">
               {activity.activity_date && (
