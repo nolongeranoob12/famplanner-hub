@@ -13,7 +13,7 @@ export default {
       },
     },
     fontFamily: {
-      sans: ['Nunito', 'sans-serif'],
+      sans: ['Inter', 'system-ui', 'sans-serif'],
     },
     extend: {
       colors: {
