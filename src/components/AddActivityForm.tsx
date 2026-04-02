@@ -7,16 +7,15 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { activityConfig, memberAvatars, type ActivityType } from '@/lib/activities';
-import { Plus, CalendarIcon, X, Sparkles } from 'lucide-react';
+import { Plus, CalendarIcon, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface AddActivityFormProps {
-  onAdd: (data: {member_name: string;type: ActivityType;description: string;activity_date?: string;time_start?: string;time_end?: string;}) => void;
+  onAdd: (data: { member_name: string; type: ActivityType; description: string; activity_date?: string; time_start?: string; time_end?: string }) => void;
   currentUser: string;
 }
 
 export function AddActivityForm({ onAdd, currentUser }: AddActivityFormProps) {
-  const memberName = currentUser;
   const [type, setType] = useState<ActivityType>('dinner');
   const [description, setDescription] = useState('');
   const [activityDate, setActivityDate] = useState<Date>();
@@ -27,14 +26,14 @@ export function AddActivityForm({ onAdd, currentUser }: AddActivityFormProps) {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!memberName.trim() || !description.trim()) return;
+    if (!currentUser.trim() || !description.trim()) return;
     onAdd({
-      member_name: memberName.trim(),
+      member_name: currentUser.trim(),
       type,
       description: description.trim(),
       activity_date: activityDate ? `${activityDate.getFullYear()}-${String(activityDate.getMonth() + 1).padStart(2, '0')}-${String(activityDate.getDate()).padStart(2, '0')}` : undefined,
       time_start: timeStart || undefined,
-      time_end: timeEnd || undefined
+      time_end: timeEnd || undefined,
     });
     setDescription('');
     setType('dinner');
@@ -48,135 +47,106 @@ export function AddActivityForm({ onAdd, currentUser }: AddActivityFormProps) {
     return (
       <button
         onClick={() => setOpen(true)}
-        className="w-full group relative overflow-hidden rounded-2xl bg-primary p-4 text-primary-foreground shadow-md hover:shadow-xl transition-all duration-300 hover:scale-[1.01] active:scale-[0.99]">
-        
-        <div className="flex items-center justify-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-primary-foreground/20 flex items-center justify-center">
-            <Plus className="w-5 h-5" />
-          </div>
-          <div className="text-left">
-            <span className="font-bold block text-lg">Post an Activity</span>
-            <span className="text-xs opacity-80">Let the family know what you're up to</span>
-          </div>
-          <Sparkles className="w-5 h-5 ml-auto opacity-60" />
+        className="w-full flex items-center gap-3 rounded-xl bg-card border border-border p-3.5 text-left hover:border-primary/40 hover:shadow-sm transition-all duration-200 active:scale-[0.99]"
+      >
+        <div className="w-9 h-9 rounded-lg bg-primary flex items-center justify-center shrink-0">
+          <Plus className="w-4 h-4 text-primary-foreground" />
         </div>
-      </button>);
-
+        <div className="flex-1 min-w-0">
+          <span className="font-semibold text-foreground text-sm block">Post an Activity</span>
+          <span className="text-xs text-muted-foreground">Let the family know what you're up to</span>
+        </div>
+      </button>
+    );
   }
 
   return (
-    <form onSubmit={handleSubmit} className="bg-card rounded-2xl border border-border shadow-lg overflow-hidden">
-      {/* Form header */}
-      <div className="bg-primary/5 border-b border-border px-5 py-3.5 flex items-center justify-between">
-        <h3 className="font-bold text-base text-foreground">What's happening? 🎉</h3>
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon"
-          className="rounded-xl h-8 w-8 text-muted-foreground hover:text-foreground"
-          onClick={() => setOpen(false)}>
-          
+    <form onSubmit={handleSubmit} className="bg-card rounded-xl border border-border overflow-hidden">
+      <div className="border-b border-border px-4 py-3 flex items-center justify-between">
+        <h3 className="font-semibold text-sm text-foreground">New Activity</h3>
+        <Button type="button" variant="ghost" size="icon" className="rounded-lg h-7 w-7 text-muted-foreground" onClick={() => setOpen(false)}>
           <X className="w-4 h-4" />
         </Button>
       </div>
 
-      <div className="p-5 space-y-4">
-        {/* Current user display */}
-        <div className="space-y-2">
-          <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Posting as</label>
-          <div className="flex items-center gap-2 px-3 py-2 rounded-xl border border-primary bg-primary/10">
-            <span className="text-base">{memberAvatars[currentUser]?.emoji ?? '👤'}</span>
-            <span className="font-bold text-foreground text-sm">{currentUser}</span>
+      <div className="p-4 space-y-3.5">
+        {/* Current user */}
+        <div className="space-y-1.5">
+          <label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">Posting as</label>
+          <div className="flex items-center gap-2 px-3 py-2 rounded-lg border border-border bg-muted/30">
+            <span className="text-sm">{memberAvatars[currentUser]?.emoji ?? '👤'}</span>
+            <span className="font-medium text-foreground text-sm">{currentUser}</span>
           </div>
         </div>
 
         {/* Activity type */}
-        <div className="space-y-2">
-          <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Activity</label>
+        <div className="space-y-1.5">
+          <label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">Type</label>
           <Select value={type} onValueChange={(v) => setType(v as ActivityType)}>
-            <SelectTrigger className="rounded-xl h-11 border-border">
+            <SelectTrigger className="rounded-lg h-10 border-border">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              {Object.entries(activityConfig).map(([key, cfg]) =>
-              <SelectItem key={key} value={key}>
+              {Object.entries(activityConfig).map(([key, cfg]) => (
+                <SelectItem key={key} value={key}>
                   <span className="flex items-center gap-2">
                     <span>{cfg.emoji}</span>
                     <span>{cfg.label}</span>
                   </span>
                 </SelectItem>
-              )}
+              ))}
             </SelectContent>
           </Select>
         </div>
 
-        {/* Date & Time picker */}
-        <div className="space-y-2">
-          <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Date & Time</label>
+        {/* Date & Time */}
+        <div className="space-y-1.5">
+          <label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">Date & Time</label>
           <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  className={cn(
-                    "w-full rounded-xl h-11 justify-start text-left font-normal border-border",
-                    !activityDate && "text-muted-foreground"
-                  )}>
-                  <CalendarIcon className="mr-2 h-4 w-4" />
-                  {activityDate ? format(activityDate, "PPP") : "Pick a date"}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="start">
-                <Calendar
-                  mode="single"
-                  selected={activityDate}
-                  onSelect={(date) => {
-                    setActivityDate(date);
-                    setCalendarOpen(false);
-                  }}
-                  initialFocus
-                  className={cn("p-3 pointer-events-auto")} />
-              </PopoverContent>
-            </Popover>
-            <div className="flex items-center gap-2 mt-2">
-              <Input
-                type="time"
-                value={timeStart}
-                onChange={(e) => setTimeStart(e.target.value)}
-                className="flex-1 rounded-xl h-11 border-border text-sm"
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                className={cn('w-full rounded-lg h-10 justify-start text-left font-normal border-border', !activityDate && 'text-muted-foreground')}
+              >
+                <CalendarIcon className="mr-2 h-4 w-4" />
+                {activityDate ? format(activityDate, 'PPP') : 'Pick a date'}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="start">
+              <Calendar
+                mode="single"
+                selected={activityDate}
+                onSelect={(date) => { setActivityDate(date); setCalendarOpen(false); }}
+                initialFocus
+                className="p-3 pointer-events-auto"
               />
-              <span className="text-muted-foreground text-sm">to</span>
-              <Input
-                type="time"
-                value={timeEnd}
-                onChange={(e) => setTimeEnd(e.target.value)}
-                className="flex-1 rounded-xl h-11 border-border text-sm"
-              />
-            </div>
+            </PopoverContent>
+          </Popover>
+          <div className="flex items-center gap-2 mt-1.5">
+            <Input type="time" value={timeStart} onChange={(e) => setTimeStart(e.target.value)} className="flex-1 rounded-lg h-10 border-border text-sm" />
+            <span className="text-muted-foreground text-xs">to</span>
+            <Input type="time" value={timeEnd} onChange={(e) => setTimeEnd(e.target.value)} className="flex-1 rounded-lg h-10 border-border text-sm" />
+          </div>
         </div>
 
         {/* Description */}
-        <div className="space-y-2">
-          <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Details</label>
+        <div className="space-y-1.5">
+          <label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">Details</label>
           <Textarea
-            placeholder="What's the plan? Where are you going?"
+            placeholder="What's the plan?"
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            className="rounded-xl min-h-[80px] border-border resize-none"
+            className="rounded-lg min-h-[72px] border-border resize-none text-sm"
             maxLength={300}
-            required />
-          
-          <div className="text-right text-xs text-muted-foreground">{description.length}/300</div>
+            required
+          />
+          <div className="text-right text-[11px] text-muted-foreground">{description.length}/300</div>
         </div>
 
-        {/* Submit */}
-        <Button
-          type="submit"
-          disabled={!memberName || !description.trim()}
-          className="w-full rounded-xl h-12 font-bold text-base shadow-md hover:shadow-lg transition-all">
-          
+        <Button type="submit" disabled={!currentUser || !description.trim()} className="w-full rounded-lg h-10 font-semibold text-sm">
           Post Activity
         </Button>
       </div>
-    </form>);
-
+    </form>
+  );
 }
