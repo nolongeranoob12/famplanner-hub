@@ -3,7 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 
 const VAPID_PUBLIC_KEY = 'OqtFyKuJTpwMOBrxkH-e9k8kieCQxL6wtNBgcnGa9l7QnosEqt7FlqqpRnW4Q6zzu5-2Tihn2_O3b57jeM0k6A';
 
-type SubscribeFailureReason =
+export type SubscribeFailureReason =
   | 'no-user'
   | 'preview'
   | 'ios-home-screen'
@@ -12,7 +12,7 @@ type SubscribeFailureReason =
   | 'save-failed'
   | 'subscribe-failed';
 
-type SubscribeResult =
+export type SubscribeResult =
   | { ok: true }
   | { ok: false; reason: SubscribeFailureReason };
 
@@ -50,6 +50,36 @@ async function ensureServiceWorkerRegistration() {
   return navigator.serviceWorker.register('/sw.js');
 }
 
+function toBase64(buffer: ArrayBuffer) {
+  return btoa(String.fromCharCode(...new Uint8Array(buffer)));
+}
+
+async function saveSubscription(currentUser: string, sub: PushSubscription) {
+  const key = sub.getKey('p256dh');
+  const auth = sub.getKey('auth');
+
+  if (!key || !auth) {
+    return { ok: false as const, reason: 'subscribe-failed' as const };
+  }
+
+  const { error } = await supabase.from('push_subscriptions').upsert(
+    {
+      member_name: currentUser,
+      endpoint: sub.endpoint,
+      p256dh: toBase64(key),
+      auth: toBase64(auth),
+    },
+    { onConflict: 'endpoint' }
+  );
+
+  if (error) {
+    console.error('Failed to save push subscription:', error);
+    return { ok: false as const, reason: 'save-failed' as const };
+  }
+
+  return { ok: true as const };
+}
+
 export function usePushSubscription(currentUser: string | null) {
   const [subscribed, setSubscribed] = useState<boolean | null>(null);
 
@@ -84,30 +114,10 @@ export function usePushSubscription(currentUser: string | null) {
         });
       }
 
-      const key = sub.getKey('p256dh');
-      const auth = sub.getKey('auth');
-      if (!key || !auth) {
+      const saved = await saveSubscription(currentUser, sub);
+      if (!saved.ok) {
         setSubscribed(false);
-        return { ok: false, reason: 'subscribe-failed' };
-      }
-
-      const p256dh = btoa(String.fromCharCode(...new Uint8Array(key)));
-      const authKey = btoa(String.fromCharCode(...new Uint8Array(auth)));
-
-      const { error } = await supabase.from('push_subscriptions').upsert(
-        {
-          member_name: currentUser,
-          endpoint: sub.endpoint,
-          p256dh,
-          auth: authKey,
-        },
-        { onConflict: 'endpoint' }
-      );
-
-      if (error) {
-        console.error('Failed to save push subscription:', error);
-        setSubscribed(false);
-        return { ok: false, reason: 'save-failed' };
+        return saved;
       }
 
       setSubscribed(true);
@@ -137,9 +147,17 @@ export function usePushSubscription(currentUser: string | null) {
         const sub = await registration.pushManager.getSubscription();
         if (cancelled) return;
 
-        setSubscribed(!!sub);
+        if (sub) {
+          const saved = await saveSubscription(currentUser, sub);
+          if (!cancelled) {
+            setSubscribed(saved.ok);
+          }
+          return;
+        }
 
-        if (!sub && Notification.permission === 'granted') {
+        setSubscribed(false);
+
+        if (Notification.permission === 'granted') {
           const result = await doSubscribe();
           if (!result.ok && !cancelled) {
             setSubscribed(false);

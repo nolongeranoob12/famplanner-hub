@@ -22,7 +22,7 @@ export default function Index() {
   // Enable browser notifications for activity changes
   useActivityNotifications(currentUser);
   // Subscribe to push notifications for background alerts
-  usePushSubscription(currentUser);
+  const pushSubscription = usePushSubscription(currentUser);
 
   const fetchActivities = useCallback(async () => {
     try {
@@ -99,7 +99,11 @@ export default function Index() {
             </div>
             <PhoneSettings currentUser={currentUser} />
             <span className="text-sm font-bold text-foreground hidden sm:inline">{currentUser}</span>
-            <NotificationBell currentUser={currentUser} />
+            <NotificationBell
+              currentUser={currentUser}
+              pushSubscribed={pushSubscription.subscribed}
+              onEnablePush={pushSubscription.subscribe}
+            />
             <Button variant="ghost" size="icon" className="rounded-xl h-8 w-8 text-muted-foreground" onClick={handleLogout}>
               <LogOut className="w-4 h-4" />
             </Button>
