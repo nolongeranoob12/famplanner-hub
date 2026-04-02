@@ -12,6 +12,14 @@ export type SubscribeFailureReason =
   | 'save-failed'
   | 'subscribe-failed';
 
+function isIosNotStandalone() {
+  const isIos = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  if (!isIos) return false;
+  // On iOS, push is only available in standalone (Home Screen) mode
+  return !('standalone' in navigator && (navigator as any).standalone);
+}
+
 export type SubscribeResult =
   | { ok: true }
   | { ok: false; reason: SubscribeFailureReason };
