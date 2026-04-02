@@ -163,6 +163,13 @@ export function usePushSubscription(currentUser: string | null) {
             setSubscribed(false);
           }
         }
+        // If permission is 'default', also try to subscribe (will prompt)
+        if (Notification.permission === 'default') {
+          const result = await doSubscribe();
+          if (!result.ok && !cancelled) {
+            setSubscribed(false);
+          }
+        }
       } catch {
         if (!cancelled) setSubscribed(false);
       }
