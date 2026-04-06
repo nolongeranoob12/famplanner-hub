@@ -1,64 +1,83 @@
-// Service Worker for Chau Family PWA — push notifications + badge
+import { clientsClaim } from 'workbox-core';
+import { cleanupOutdatedCaches, precacheAndRoute } from 'workbox-precaching';
 
-// This file supplements VitePWA's generated SW with push handling.
-// Badge count stored in a simple variable (resets on SW restart, but good enough)
+precacheAndRoute(self.__WB_MANIFEST || []);
+cleanupOutdatedCaches();
+self.skipWaiting();
+clientsClaim();
+
 let badgeCount = 0;
 
-self.addEventListener("push", (event) => {
-  let data = { title: "Chau Family", body: "Someone updated an activity" };
+function syncBadge(count) {
+  badgeCount = Math.max(0, Number(count) || 0);
+
+  if (badgeCount > 0) {
+    return navigator.setAppBadge ? navigator.setAppBadge(badgeCount) : Promise.resolve();
+  }
+
+  return navigator.clearAppBadge ? navigator.clearAppBadge() : Promise.resolve();
+}
+
+self.addEventListener('push', (event) => {
+  let data = { title: 'Chau Family', body: 'Someone updated an activity', url: '/', badgeCount: badgeCount + 1 };
+
   try {
-    data = event.data.json();
+    const parsed = event.data?.json?.() ?? {};
+    data = {
+      ...data,
+      ...parsed,
+      badgeCount:
+        typeof parsed.badgeCount === 'number'
+          ? parsed.badgeCount
+          : typeof parsed.badge_count === 'number'
+            ? parsed.badge_count
+            : data.badgeCount,
+    };
   } catch {
     // use defaults
   }
-
-  badgeCount += 1;
 
   event.waitUntil(
     Promise.all([
       self.registration.showNotification(data.title, {
         body: data.body,
-        icon: "/pwa-192.png",
-        badge: "/pwa-192.png",
+        icon: '/pwa-192.png',
+        badge: '/pwa-192.png',
         vibrate: [200, 100, 200],
-        tag: "activity-update-" + Date.now(),
+        tag: 'activity-update-' + Date.now(),
         renotify: true,
-        data: { url: "/" },
+        data: { url: data.url || '/' },
       }),
-      navigator.setAppBadge ? navigator.setAppBadge(badgeCount) : Promise.resolve(),
+      syncBadge(data.badgeCount),
     ])
   );
 });
 
-self.addEventListener("notificationclick", (event) => {
+self.addEventListener('notificationclick', (event) => {
   event.notification.close();
-  badgeCount = 0;
-  if (navigator.clearAppBadge) navigator.clearAppBadge();
+  const targetUrl = event.notification.data?.url || '/';
+
   event.waitUntil(
-    clients.matchAll({ type: "window" }).then((clientList) => {
-      for (const client of clientList) {
-        if (client.url && "focus" in client) return client.focus();
-      }
-      if (clients.openWindow) return clients.openWindow("/");
-    })
+    Promise.all([
+      syncBadge(0),
+      clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
+        for (const client of clientList) {
+          if (client.url && 'focus' in client) return client.focus();
+        }
+
+        if (clients.openWindow) return clients.openWindow(targetUrl);
+      }),
+    ])
   );
 });
 
-// Clear badge when user opens/focuses the app
-self.addEventListener("message", (event) => {
-  if (event.data === "clear-badge" || event.data?.type === "clear-badge") {
-    badgeCount = 0;
-    if (navigator.clearAppBadge) navigator.clearAppBadge();
+self.addEventListener('message', (event) => {
+  if (event.data === 'clear-badge' || event.data?.type === 'clear-badge') {
+    event.waitUntil(syncBadge(0));
+    return;
   }
 
-  if (event.data?.type === "set-badge-count") {
-    badgeCount = Math.max(0, Number(event.data.count) || 0);
-
-    if (badgeCount > 0) {
-      if (navigator.setAppBadge) event.waitUntil(navigator.setAppBadge(badgeCount));
-      return;
-    }
-
-    if (navigator.clearAppBadge) event.waitUntil(navigator.clearAppBadge());
+  if (event.data?.type === 'set-badge-count') {
+    event.waitUntil(syncBadge(event.data.count));
   }
 });

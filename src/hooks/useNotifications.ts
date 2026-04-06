@@ -79,11 +79,12 @@ export function useNotifications(currentUser: string | null) {
 
   useEffect(() => {
     const badgeNavigator = navigator as BadgeNavigator;
-    const serviceWorkerController = navigator.serviceWorker?.controller;
 
-    if (serviceWorkerController) {
-      serviceWorkerController.postMessage({ type: 'set-badge-count', count: unreadCount });
-    }
+    navigator.serviceWorker?.ready
+      .then((registration) => {
+        registration.active?.postMessage({ type: 'set-badge-count', count: unreadCount });
+      })
+      .catch(() => undefined);
 
     if (unreadCount > 0) {
       badgeNavigator.setAppBadge?.(unreadCount).catch(() => undefined);
