@@ -232,11 +232,34 @@ Deno.serve(async (req) => {
 
     console.log(`Found ${(subs ?? []).length} push subscriptions to notify`);
 
+    const memberNames = [...new Set((subs ?? []).map((sub: any) => sub.member_name).filter(Boolean))];
+    const unreadCounts = new Map<string, number>();
+
+    if (memberNames.length > 0) {
+      const { data: unreadNotifications, error: unreadError } = await supabase
+        .from("notifications")
+        .select("member_name")
+        .in("member_name", memberNames)
+        .eq("is_read", false);
+
+      if (unreadError) throw unreadError;
+
+      for (const row of unreadNotifications ?? []) {
+        const memberName = (row as { member_name: string }).member_name;
+        unreadCounts.set(memberName, (unreadCounts.get(memberName) ?? 0) + 1);
+      }
+    }
+
     const results = await Promise.allSettled(
       (subs ?? []).map(async (sub: any) => {
         const vapidHeaders = await createVapidAuthHeader(sub.endpoint, vapidPublic, vapidPrivate);
 
-        const payloadBytes = new TextEncoder().encode(JSON.stringify({ title, body }));
+        const payloadBytes = new TextEncoder().encode(JSON.stringify({
+          title,
+          body,
+          url: "/",
+          badgeCount: unreadCounts.get(sub.member_name) ?? 1,
+        }));
 
         // Encrypt the payload using Web Push encryption (RFC 8291)
         const { encrypted } = await encryptPayload(payloadBytes, sub.p256dh, sub.auth);

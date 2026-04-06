@@ -18,13 +18,15 @@ export default defineConfig(({ mode }) => ({
     mode === "development" && componentTagger(),
     VitePWA({
       registerType: "autoUpdate",
+      strategies: "injectManifest",
+      srcDir: "public",
+      filename: "sw.js",
       devOptions: {
         enabled: false,
       },
-      workbox: {
-        navigateFallbackDenylist: [/^\/~oauth/],
+      injectManifest: {
+        rollupFormat: "iife",
       },
-      injectManifest: undefined,
       manifest: {
         name: "Chau Family",
         short_name: "ChauFamily",
