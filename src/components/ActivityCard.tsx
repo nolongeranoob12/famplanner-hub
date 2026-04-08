@@ -17,6 +17,7 @@ export function ActivityCard({ activity, onDelete, currentUser }: ActivityCardPr
   const wasEdited = activity.updated_at !== activity.created_at;
   const isOwner = currentUser === activity.member_name;
   const [phone, setPhone] = useState('');
+  const [imageExpanded, setImageExpanded] = useState(false);
 
   useEffect(() => {
     getMemberPhone(activity.member_name).then(setPhone);
@@ -31,6 +32,22 @@ export function ActivityCard({ activity, onDelete, currentUser }: ActivityCardPr
       transition={{ duration: 0.3, ease: 'easeOut' }}
       className="bg-card rounded-xl border border-border hover:border-border/80 hover:shadow-md transition-shadow duration-200 overflow-hidden group"
     >
+      {/* Photo */}
+      {activity.image_url && (
+        <button
+          type="button"
+          onClick={() => setImageExpanded(!imageExpanded)}
+          className="w-full overflow-hidden"
+        >
+          <img
+            src={activity.image_url}
+            alt="Activity photo"
+            className={`w-full object-cover transition-all duration-300 ${imageExpanded ? 'max-h-96' : 'max-h-48'}`}
+            loading="lazy"
+          />
+        </button>
+      )}
+
       <div className="p-4">
         <div className="flex items-start gap-3">
           {/* Avatar */}
