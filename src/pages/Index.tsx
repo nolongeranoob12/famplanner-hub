@@ -180,7 +180,14 @@ export default function Index() {
           <div className="space-y-3">
             <AnimatePresence mode="popLayout">
               {filteredActivities.map((activity) => (
-                <ActivityCard key={activity.id} activity={activity} onDelete={handleDelete} currentUser={currentUser} />
+                <ActivityCard
+                  key={activity.id}
+                  activity={activity}
+                  onDelete={handleDelete}
+                  currentUser={currentUser}
+                  reactions={reactions[activity.id] ?? []}
+                  onReactionChange={() => fetchReactions(activities)}
+                />
               ))}
             </AnimatePresence>
           </div>
