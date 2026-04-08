@@ -164,14 +164,15 @@ export function usePushSubscription(currentUser: string | null) {
 
     let cancelled = false;
 
-    (async () => {
+    const syncSubscription = async () => {
       try {
         const registration = await ensureServiceWorkerRegistration();
         await navigator.serviceWorker.ready;
 
-        const sub = await registration.pushManager.getSubscription();
+        let sub = await registration.pushManager.getSubscription();
         if (cancelled) return;
 
+        // If subscription exists, re-save it (keeps DB in sync if member_name changed)
         if (sub) {
           const saved = await saveSubscription(currentUser, sub);
           if (!cancelled) {
@@ -182,7 +183,9 @@ export function usePushSubscription(currentUser: string | null) {
 
         setSubscribed(false);
 
+        // Auto-resubscribe if permission already granted (handles expired subscriptions)
         if (Notification.permission === 'granted') {
+          console.log('[Push] Permission granted but no subscription — re-subscribing...');
           const result = await doSubscribe();
           if (!result.ok && !cancelled) {
             setSubscribed(false);
@@ -198,10 +201,26 @@ export function usePushSubscription(currentUser: string | null) {
       } catch {
         if (!cancelled) setSubscribed(false);
       }
-    })();
+    };
+
+    // Initial sync
+    syncSubscription();
+
+    // Re-sync every 30 minutes to catch expired subscriptions
+    const interval = setInterval(syncSubscription, 30 * 60 * 1000);
+
+    // Re-sync when app becomes visible (user returns to app)
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') {
+        syncSubscription();
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibility);
 
     return () => {
       cancelled = true;
+      clearInterval(interval);
+      document.removeEventListener('visibilitychange', handleVisibility);
     };
   }, [currentUser, doSubscribe]);
 
