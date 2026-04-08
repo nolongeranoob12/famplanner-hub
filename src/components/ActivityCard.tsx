@@ -3,6 +3,7 @@ import { activityConfig, memberAvatars, getMemberPhone, type Activity } from '@/
 import { Trash2, CalendarDays, Clock, Phone, MessageCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { formatDistanceToNow, format } from 'date-fns';
+import { motion } from 'framer-motion';
 
 interface ActivityCardProps {
   activity: Activity;
@@ -22,7 +23,14 @@ export function ActivityCard({ activity, onDelete, currentUser }: ActivityCardPr
   }, [activity.member_name]);
 
   return (
-    <div className="bg-card rounded-xl border border-border hover:border-border/80 hover:shadow-md transition-all duration-200 overflow-hidden group">
+    <motion.div
+      layout
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, x: -40, transition: { duration: 0.2 } }}
+      transition={{ duration: 0.3, ease: 'easeOut' }}
+      className="bg-card rounded-xl border border-border hover:border-border/80 hover:shadow-md transition-shadow duration-200 overflow-hidden group"
+    >
       <div className="p-4">
         <div className="flex items-start gap-3">
           {/* Avatar */}
@@ -96,6 +104,6 @@ export function ActivityCard({ activity, onDelete, currentUser }: ActivityCardPr
           )}
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 }
