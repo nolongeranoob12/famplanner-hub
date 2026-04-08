@@ -7,6 +7,7 @@ export interface Activity {
   member_name: string;
   type: ActivityType;
   description: string;
+  image_url: string | null;
   activity_date: string | null;
   
   time_start: string | null;
@@ -57,7 +58,7 @@ async function sendPush(title: string, body: string, excludeMember?: string) {
   }
 }
 
-export async function addActivity(activity: { member_name: string; type: ActivityType; description: string; activity_date?: string; time_start?: string; time_end?: string }): Promise<Activity> {
+export async function addActivity(activity: { member_name: string; type: ActivityType; description: string; activity_date?: string; time_start?: string; time_end?: string; image_url?: string }): Promise<Activity> {
   const { data, error } = await supabase
     .from('activities')
     .insert(activity)
@@ -65,6 +66,18 @@ export async function addActivity(activity: { member_name: string; type: Activit
     .single();
   if (error) throw error;
   return data as Activity;
+}
+
+export async function uploadActivityPhoto(file: File): Promise<string> {
+  const ext = file.name.split('.').pop() || 'jpg';
+  const path = `${crypto.randomUUID()}.${ext}`;
+  const { error } = await supabase.storage.from('activity-photos').upload(path, file, {
+    cacheControl: '3600',
+    upsert: false,
+  });
+  if (error) throw error;
+  const { data: urlData } = supabase.storage.from('activity-photos').getPublicUrl(path);
+  return urlData.publicUrl;
 }
 
 export async function deleteActivity(id: string) {

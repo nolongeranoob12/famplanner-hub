@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { format } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -6,13 +6,14 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { activityConfig, memberAvatars, type ActivityType } from '@/lib/activities';
-import { Plus, CalendarIcon, X } from 'lucide-react';
+import { activityConfig, memberAvatars, uploadActivityPhoto, type ActivityType } from '@/lib/activities';
+import { Plus, CalendarIcon, X, ImagePlus, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
+import { toast } from 'sonner';
 
 interface AddActivityFormProps {
-  onAdd: (data: { member_name: string; type: ActivityType; description: string; activity_date?: string; time_start?: string; time_end?: string }) => void;
+  onAdd: (data: { member_name: string; type: ActivityType; description: string; activity_date?: string; time_start?: string; time_end?: string; image_url?: string }) => void;
   currentUser: string;
 }
 
@@ -24,10 +25,46 @@ export function AddActivityForm({ onAdd, currentUser }: AddActivityFormProps) {
   const [timeEnd, setTimeEnd] = useState('');
   const [open, setOpen] = useState(false);
   const [calendarOpen, setCalendarOpen] = useState(false);
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('Image must be under 5MB');
+      return;
+    }
+    setImageFile(file);
+    setImagePreview(URL.createObjectURL(file));
+  };
+
+  const removeImage = () => {
+    setImageFile(null);
+    if (imagePreview) URL.revokeObjectURL(imagePreview);
+    setImagePreview(null);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!currentUser.trim() || !description.trim()) return;
+
+    let image_url: string | undefined;
+    if (imageFile) {
+      setUploading(true);
+      try {
+        image_url = await uploadActivityPhoto(imageFile);
+      } catch {
+        toast.error('Failed to upload photo');
+        setUploading(false);
+        return;
+      }
+      setUploading(false);
+    }
+
     onAdd({
       member_name: currentUser.trim(),
       type,
@@ -35,12 +72,14 @@ export function AddActivityForm({ onAdd, currentUser }: AddActivityFormProps) {
       activity_date: activityDate ? `${activityDate.getFullYear()}-${String(activityDate.getMonth() + 1).padStart(2, '0')}-${String(activityDate.getDate()).padStart(2, '0')}` : undefined,
       time_start: timeStart || undefined,
       time_end: timeEnd || undefined,
+      image_url,
     });
     setDescription('');
     setType('dinner');
     setActivityDate(undefined);
     setTimeStart('');
     setTimeEnd('');
+    removeImage();
     setOpen(false);
   };
 
@@ -142,6 +181,39 @@ export function AddActivityForm({ onAdd, currentUser }: AddActivityFormProps) {
               </div>
             </div>
 
+            {/* Photo */}
+            <div className="space-y-1.5">
+              <label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">Photo</label>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={handleImageSelect}
+              />
+              {imagePreview ? (
+                <div className="relative rounded-lg overflow-hidden">
+                  <img src={imagePreview} alt="Preview" className="w-full h-40 object-cover rounded-lg" />
+                  <button
+                    type="button"
+                    onClick={removeImage}
+                    className="absolute top-2 right-2 w-7 h-7 rounded-full bg-background/80 backdrop-blur-sm flex items-center justify-center text-foreground hover:bg-background transition-colors"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="w-full flex items-center gap-2 justify-center py-3 rounded-lg border border-dashed border-border text-muted-foreground hover:border-primary/40 hover:text-primary transition-colors text-sm"
+                >
+                  <ImagePlus className="w-4 h-4" />
+                  Add a photo
+                </button>
+              )}
+            </div>
+
             {/* Description */}
             <div className="space-y-1.5">
               <label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">Details</label>
@@ -156,8 +228,15 @@ export function AddActivityForm({ onAdd, currentUser }: AddActivityFormProps) {
               <div className="text-right text-[11px] text-muted-foreground">{description.length}/300</div>
             </div>
 
-            <Button type="submit" disabled={!currentUser || !description.trim()} className="w-full rounded-lg h-10 font-semibold text-sm">
-              Post Activity
+            <Button type="submit" disabled={!currentUser || !description.trim() || uploading} className="w-full rounded-lg h-10 font-semibold text-sm">
+              {uploading ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Uploading…
+                </>
+              ) : (
+                'Post Activity'
+              )}
             </Button>
           </div>
         </motion.form>
