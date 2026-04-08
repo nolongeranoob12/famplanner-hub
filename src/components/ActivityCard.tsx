@@ -84,7 +84,7 @@ export function ActivityCard({ activity, onDelete, currentUser, reactions = [], 
             {/* Header row */}
             <div className="flex items-center gap-2 flex-wrap mb-0.5">
               <span className="font-semibold text-foreground text-sm">{activity.member_name}</span>
-              <span className={`text-[11px] px-2 py-0.5 rounded-md font-medium ${config.bgClass} ${config.textClass}`}>
+              <span className={`text-[11px] px-2.5 py-1 rounded-full font-semibold shadow-sm ${config.bgClass} ${config.textClass}`}>
                 {config.emoji} {config.label}
               </span>
               {phone && (
