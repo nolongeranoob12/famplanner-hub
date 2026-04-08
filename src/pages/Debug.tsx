@@ -76,14 +76,11 @@ export default function Debug() {
       result.unreadCount = data?.filter((n: any) => !n.is_read).length ?? 0;
     }
 
-    // Trigger check
-    const { data: triggers } = await supabase.rpc('pg_catalog' as any) as any;
-    // Can't call pg_catalog directly, skip
-
     setInfo(result);
     setLoading(false);
   };
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { gather(); }, []);
 
   const rows: { label: string; value: any; ok?: boolean | null }[] = [
