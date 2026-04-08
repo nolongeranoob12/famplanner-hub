@@ -17,15 +17,15 @@ export interface Activity {
 }
 
 export const activityConfig: Record<ActivityType, { emoji: string; label: string; bgClass: string; textClass: string }> = {
-  dinner:  { emoji: '🍽️', label: 'Dinner Out', bgClass: 'bg-orange-50',  textClass: 'text-orange-600' },
-  sports:  { emoji: '🏃', label: 'Sports',     bgClass: 'bg-emerald-50', textClass: 'text-emerald-600' },
-  errands: { emoji: '🛒', label: 'Errands',    bgClass: 'bg-sky-50',     textClass: 'text-sky-600' },
-  travel:  { emoji: '✈️', label: 'Travel',      bgClass: 'bg-violet-50',  textClass: 'text-violet-600' },
-  movie:   { emoji: '🎬', label: 'Movie',       bgClass: 'bg-pink-50',    textClass: 'text-pink-600' },
-  hangout: { emoji: '☕', label: 'Hangout',     bgClass: 'bg-amber-50',   textClass: 'text-amber-600' },
-  cooking: { emoji: '🍳', label: 'Cooking',     bgClass: 'bg-red-50',     textClass: 'text-red-600' },
-  work:    { emoji: '💼', label: 'Work',        bgClass: 'bg-slate-50',   textClass: 'text-slate-600' },
-  other:   { emoji: '📌', label: 'Other',       bgClass: 'bg-muted',      textClass: 'text-muted-foreground' },
+  dinner:  { emoji: '🍽️', label: 'Dinner Out', bgClass: 'bg-gradient-to-r from-orange-100/80 to-amber-50/60 backdrop-blur-sm border border-orange-200/40',  textClass: 'text-orange-700' },
+  sports:  { emoji: '🏃', label: 'Sports',     bgClass: 'bg-gradient-to-r from-emerald-100/80 to-green-50/60 backdrop-blur-sm border border-emerald-200/40', textClass: 'text-emerald-700' },
+  errands: { emoji: '🛒', label: 'Errands',    bgClass: 'bg-gradient-to-r from-sky-100/80 to-blue-50/60 backdrop-blur-sm border border-sky-200/40',     textClass: 'text-sky-700' },
+  travel:  { emoji: '✈️', label: 'Travel',      bgClass: 'bg-gradient-to-r from-violet-100/80 to-purple-50/60 backdrop-blur-sm border border-violet-200/40',  textClass: 'text-violet-700' },
+  movie:   { emoji: '🎬', label: 'Movie',       bgClass: 'bg-gradient-to-r from-pink-100/80 to-rose-50/60 backdrop-blur-sm border border-pink-200/40',    textClass: 'text-pink-700' },
+  hangout: { emoji: '☕', label: 'Hangout',     bgClass: 'bg-gradient-to-r from-amber-100/80 to-yellow-50/60 backdrop-blur-sm border border-amber-200/40',   textClass: 'text-amber-700' },
+  cooking: { emoji: '🍳', label: 'Cooking',     bgClass: 'bg-gradient-to-r from-red-100/80 to-orange-50/60 backdrop-blur-sm border border-red-200/40',     textClass: 'text-red-700' },
+  work:    { emoji: '💼', label: 'Work',        bgClass: 'bg-gradient-to-r from-slate-100/80 to-gray-50/60 backdrop-blur-sm border border-slate-200/40',   textClass: 'text-slate-700' },
+  other:   { emoji: '📌', label: 'Other',       bgClass: 'bg-gradient-to-r from-muted/80 to-muted/40 backdrop-blur-sm border border-border/40',      textClass: 'text-muted-foreground' },
 };
 
 export const familyMembers = ['Dad', 'Mom', 'Jitsoon', 'Jityi', 'Jitbao', 'Ruimin'] as const;
