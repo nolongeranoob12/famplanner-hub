@@ -197,6 +197,7 @@ export default function Index() {
                   reactions={reactions[activity.id] ?? []}
                   onReactionChange={() => fetchReactions(activities)}
                   profiles={profiles}
+                  isActive={isRecentlyActive(lastActive[activity.member_name])}
                 />
               ))}
             </AnimatePresence>

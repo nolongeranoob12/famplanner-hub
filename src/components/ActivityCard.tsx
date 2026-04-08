@@ -14,9 +14,10 @@ interface ActivityCardProps {
   reactions?: Reaction[];
   onReactionChange?: () => void;
   profiles?: Record<string, MemberProfile>;
+  isActive?: boolean;
 }
 
-export function ActivityCard({ activity, onDelete, currentUser, reactions = [], onReactionChange, profiles = {} }: ActivityCardProps) {
+export function ActivityCard({ activity, onDelete, currentUser, reactions = [], onReactionChange, profiles = {}, isActive }: ActivityCardProps) {
   const config = activityConfig[activity.type];
   const avatar = getDisplayAvatar(activity.member_name, profiles);
   const wasEdited = activity.updated_at !== activity.created_at;
@@ -77,7 +78,7 @@ export function ActivityCard({ activity, onDelete, currentUser, reactions = [], 
       <div className="p-4">
         <div className="flex items-start gap-3">
           {/* Avatar */}
-          <MemberAvatar emoji={avatar.emoji} color={avatar.color} avatarUrl={avatar.avatarUrl} size="md" />
+          <MemberAvatar emoji={avatar.emoji} color={avatar.color} avatarUrl={avatar.avatarUrl} size="md" isActive={isActive} />
 
           <div className="flex-1 min-w-0">
             {/* Header row */}
