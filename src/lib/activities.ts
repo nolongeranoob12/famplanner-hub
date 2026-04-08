@@ -85,6 +85,52 @@ export async function deleteActivity(id: string) {
   if (error) throw error;
 }
 
+// ── Reactions ──────────────────────────────────────────────────────
+
+export const reactionEmojis = ['❤️', '👍', '😂'] as const;
+export type ReactionEmoji = (typeof reactionEmojis)[number];
+
+export interface Reaction {
+  id: string;
+  activity_id: string;
+  member_name: string;
+  emoji: string;
+  created_at: string;
+}
+
+export async function getReactions(activityIds: string[]): Promise<Record<string, Reaction[]>> {
+  if (activityIds.length === 0) return {};
+  const { data, error } = await supabase
+    .from('activity_reactions')
+    .select('*')
+    .in('activity_id', activityIds);
+  if (error) throw error;
+  const map: Record<string, Reaction[]> = {};
+  for (const r of (data ?? []) as Reaction[]) {
+    (map[r.activity_id] ??= []).push(r);
+  }
+  return map;
+}
+
+export async function toggleReaction(activityId: string, memberName: string, emoji: string): Promise<boolean> {
+  // Check if already reacted
+  const { data: existing } = await supabase
+    .from('activity_reactions')
+    .select('id')
+    .eq('activity_id', activityId)
+    .eq('member_name', memberName)
+    .eq('emoji', emoji)
+    .maybeSingle();
+
+  if (existing) {
+    await supabase.from('activity_reactions').delete().eq('id', existing.id);
+    return false; // removed
+  } else {
+    await supabase.from('activity_reactions').insert({ activity_id: activityId, member_name: memberName, emoji });
+    return true; // added
+  }
+}
+
 // ── Member profiles (phone numbers) ────────────────────────────────
 
 export async function getMemberPhone(memberName: string): Promise<string> {

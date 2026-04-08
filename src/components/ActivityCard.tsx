@@ -1,27 +1,51 @@
 import { useState, useEffect } from 'react';
-import { activityConfig, memberAvatars, getMemberPhone, type Activity } from '@/lib/activities';
+import { activityConfig, memberAvatars, getMemberPhone, reactionEmojis, toggleReaction, type Activity, type Reaction } from '@/lib/activities';
 import { Trash2, CalendarDays, Clock, Phone, MessageCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { formatDistanceToNow, format } from 'date-fns';
 import { motion } from 'framer-motion';
+import { cn } from '@/lib/utils';
 
 interface ActivityCardProps {
   activity: Activity;
   onDelete: (id: string) => void;
   currentUser?: string;
+  reactions?: Reaction[];
+  onReactionChange?: () => void;
 }
 
-export function ActivityCard({ activity, onDelete, currentUser }: ActivityCardProps) {
+export function ActivityCard({ activity, onDelete, currentUser, reactions = [], onReactionChange }: ActivityCardProps) {
   const config = activityConfig[activity.type];
   const avatar = memberAvatars[activity.member_name] ?? { color: 'bg-primary', emoji: '👤' };
   const wasEdited = activity.updated_at !== activity.created_at;
   const isOwner = currentUser === activity.member_name;
   const [phone, setPhone] = useState('');
   const [imageExpanded, setImageExpanded] = useState(false);
+  const [reacting, setReacting] = useState(false);
 
   useEffect(() => {
     getMemberPhone(activity.member_name).then(setPhone);
   }, [activity.member_name]);
+
+  const handleReaction = async (emoji: string) => {
+    if (!currentUser || reacting) return;
+    setReacting(true);
+    try {
+      await toggleReaction(activity.id, currentUser, emoji);
+      onReactionChange?.();
+    } finally {
+      setReacting(false);
+    }
+  };
+
+  // Group reactions by emoji
+  const reactionCounts: Record<string, { count: number; members: string[]; userReacted: boolean }> = {};
+  for (const r of reactions) {
+    if (!reactionCounts[r.emoji]) reactionCounts[r.emoji] = { count: 0, members: [], userReacted: false };
+    reactionCounts[r.emoji].count++;
+    reactionCounts[r.emoji].members.push(r.member_name);
+    if (r.member_name === currentUser) reactionCounts[r.emoji].userReacted = true;
+  }
 
   return (
     <motion.div
@@ -105,6 +129,33 @@ export function ActivityCard({ activity, onDelete, currentUser }: ActivityCardPr
                 <span>{formatDistanceToNow(new Date(activity.created_at), { addSuffix: true })}</span>
                 {wasEdited && <span className="italic">· edited</span>}
               </div>
+            </div>
+
+            {/* Reactions */}
+            <div className="mt-2.5 flex items-center gap-1.5 flex-wrap">
+              {reactionEmojis.map((emoji) => {
+                const info = reactionCounts[emoji];
+                const hasCount = info && info.count > 0;
+                const userReacted = info?.userReacted ?? false;
+                return (
+                  <button
+                    key={emoji}
+                    onClick={() => handleReaction(emoji)}
+                    disabled={reacting}
+                    title={info?.members.join(', ')}
+                    className={cn(
+                      'inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs transition-all duration-150',
+                      'border hover:scale-105 active:scale-95',
+                      userReacted
+                        ? 'border-primary/40 bg-primary/10 text-primary font-semibold'
+                        : 'border-border bg-secondary/50 text-muted-foreground hover:bg-secondary'
+                    )}
+                  >
+                    <span className="text-sm">{emoji}</span>
+                    {hasCount && <span>{info.count}</span>}
+                  </button>
+                );
+              })}
             </div>
           </div>
 

@@ -5,7 +5,7 @@ import { ActivityCard } from '@/components/ActivityCard';
 import { ActivityCalendar } from '@/components/ActivityCalendar';
 import { NamePicker } from '@/components/NamePicker';
 import { PhoneSettings } from '@/components/PhoneSettings';
-import { getActivities, addActivity, deleteActivity, type Activity, type ActivityType, memberAvatars } from '@/lib/activities';
+import { getActivities, addActivity, deleteActivity, getReactions, type Activity, type ActivityType, type Reaction, memberAvatars } from '@/lib/activities';
 import { useActivityNotifications } from '@/hooks/useActivityNotifications';
 import { usePushSubscription } from '@/hooks/usePushSubscription';
 import { NotificationBell } from '@/components/NotificationBell';
@@ -16,6 +16,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 
 export default function Index() {
   const [activities, setActivities] = useState<Activity[]>([]);
+  const [reactions, setReactions] = useState<Record<string, Reaction[]>>({});
   const [loading, setLoading] = useState(true);
   const [currentUser, setCurrentUser] = useState<string | null>(() => localStorage.getItem('chau_family_user'));
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
@@ -23,16 +24,25 @@ export default function Index() {
   useActivityNotifications(currentUser);
   const pushSubscription = usePushSubscription(currentUser);
 
+  const fetchReactions = useCallback(async (acts: Activity[]) => {
+    try {
+      const ids = acts.map(a => a.id);
+      const r = await getReactions(ids);
+      setReactions(r);
+    } catch { /* non-critical */ }
+  }, []);
+
   const fetchActivities = useCallback(async () => {
     try {
       const data = await getActivities();
       setActivities(data);
+      fetchReactions(data);
     } catch {
       toast.error('Failed to load activities');
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [fetchReactions]);
 
   useEffect(() => {
     if (currentUser) {
@@ -170,7 +180,14 @@ export default function Index() {
           <div className="space-y-3">
             <AnimatePresence mode="popLayout">
               {filteredActivities.map((activity) => (
-                <ActivityCard key={activity.id} activity={activity} onDelete={handleDelete} currentUser={currentUser} />
+                <ActivityCard
+                  key={activity.id}
+                  activity={activity}
+                  onDelete={handleDelete}
+                  currentUser={currentUser}
+                  reactions={reactions[activity.id] ?? []}
+                  onReactionChange={() => fetchReactions(activities)}
+                />
               ))}
             </AnimatePresence>
           </div>
