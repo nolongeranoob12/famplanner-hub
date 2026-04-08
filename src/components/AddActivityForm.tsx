@@ -6,7 +6,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { activityConfig, memberAvatars, uploadActivityPhoto, type ActivityType } from '@/lib/activities';
+import { activityConfig, uploadActivityPhoto, getDisplayAvatar, type ActivityType, type MemberProfile } from '@/lib/activities';
+import { MemberAvatar } from '@/components/MemberAvatar';
 import { Plus, CalendarIcon, X, ImagePlus, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -15,9 +16,10 @@ import { toast } from 'sonner';
 interface AddActivityFormProps {
   onAdd: (data: { member_name: string; type: ActivityType; description: string; activity_date?: string; time_start?: string; time_end?: string; image_url?: string }) => void;
   currentUser: string;
+  profiles?: Record<string, MemberProfile>;
 }
 
-export function AddActivityForm({ onAdd, currentUser }: AddActivityFormProps) {
+export function AddActivityForm({ onAdd, currentUser, profiles = {} }: AddActivityFormProps) {
   const [type, setType] = useState<ActivityType>('dinner');
   const [description, setDescription] = useState('');
   const [activityDate, setActivityDate] = useState<Date>();
@@ -126,7 +128,7 @@ export function AddActivityForm({ onAdd, currentUser }: AddActivityFormProps) {
             <div className="space-y-1.5">
               <label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">Posting as</label>
               <div className="flex items-center gap-2 px-3 py-2 rounded-lg border border-border bg-muted/30">
-                <span className="text-sm">{memberAvatars[currentUser]?.emoji ?? '👤'}</span>
+                {(() => { const d = getDisplayAvatar(currentUser, profiles); return <MemberAvatar emoji={d.emoji} color={d.color} avatarUrl={d.avatarUrl} size="sm" />; })()}
                 <span className="font-medium text-foreground text-sm">{currentUser}</span>
               </div>
             </div>
