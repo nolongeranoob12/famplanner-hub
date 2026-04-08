@@ -131,7 +131,14 @@ export async function toggleReaction(activityId: string, memberName: string, emo
   }
 }
 
-// ── Member profiles (phone numbers) ────────────────────────────────
+// ── Member profiles (phone numbers & avatars) ─────────────────────
+
+export interface MemberProfile {
+  member_name: string;
+  phone: string | null;
+  avatar_emoji: string | null;
+  avatar_url: string | null;
+}
 
 export async function getMemberPhone(memberName: string): Promise<string> {
   const { data } = await (supabase as any).from('member_profiles').select('phone').eq('member_name', memberName).maybeSingle();
@@ -143,4 +150,45 @@ export async function setMemberPhone(memberName: string, phone: string): Promise
     { member_name: memberName, phone },
     { onConflict: 'member_name' }
   );
+}
+
+export async function getAllMemberProfiles(): Promise<Record<string, MemberProfile>> {
+  const { data } = await (supabase as any).from('member_profiles').select('member_name, phone, avatar_emoji, avatar_url');
+  const map: Record<string, MemberProfile> = {};
+  for (const row of data ?? []) {
+    map[row.member_name] = row;
+  }
+  return map;
+}
+
+export async function setMemberAvatar(memberName: string, avatar_emoji?: string, avatar_url?: string): Promise<void> {
+  await (supabase as any).from('member_profiles').upsert(
+    { member_name: memberName, avatar_emoji: avatar_emoji ?? null, avatar_url: avatar_url ?? null },
+    { onConflict: 'member_name' }
+  );
+}
+
+export async function uploadMemberAvatar(file: File): Promise<string> {
+  const ext = file.name.split('.').pop() || 'jpg';
+  const path = `${crypto.randomUUID()}.${ext}`;
+  const { error } = await supabase.storage.from('member-avatars').upload(path, file, {
+    cacheControl: '3600',
+    upsert: false,
+  });
+  if (error) throw error;
+  const { data: urlData } = supabase.storage.from('member-avatars').getPublicUrl(path);
+  return urlData.publicUrl;
+}
+
+// Helper to get display avatar (custom overrides default)
+export function getDisplayAvatar(memberName: string, profiles: Record<string, MemberProfile>): { emoji: string; color: string; avatarUrl?: string } {
+  const defaults = memberAvatars[memberName] ?? { color: 'bg-primary', emoji: '👤' };
+  const profile = profiles[memberName];
+  if (profile?.avatar_url) {
+    return { ...defaults, avatarUrl: profile.avatar_url };
+  }
+  if (profile?.avatar_emoji) {
+    return { ...defaults, emoji: profile.avatar_emoji };
+  }
+  return defaults;
 }

@@ -1,5 +1,8 @@
-import { familyMembers, memberAvatars } from '@/lib/activities';
-import { Users } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { familyMembers, memberAvatars, getAllMemberProfiles, getDisplayAvatar, type MemberProfile } from '@/lib/activities';
+import { MemberAvatar } from '@/components/MemberAvatar';
+import { AvatarEditor } from '@/components/AvatarEditor';
+import { Users, Pencil } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 interface NamePickerProps {
@@ -7,6 +10,15 @@ interface NamePickerProps {
 }
 
 export function NamePicker({ onSelect }: NamePickerProps) {
+  const [profiles, setProfiles] = useState<Record<string, MemberProfile>>({});
+  const [editingMember, setEditingMember] = useState<string | null>(null);
+
+  const fetchProfiles = () => {
+    getAllMemberProfiles().then(setProfiles);
+  };
+
+  useEffect(() => { fetchProfiles(); }, []);
+
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-6">
       <motion.div
@@ -30,26 +42,54 @@ export function NamePicker({ onSelect }: NamePickerProps) {
 
         <div className="grid grid-cols-2 gap-3">
           {familyMembers.map((name, index) => {
-            const avatar = memberAvatars[name];
+            const display = getDisplayAvatar(name, profiles);
             return (
-              <motion.button
+              <motion.div
                 key={name}
-                onClick={() => onSelect(name)}
-                className="flex flex-col items-center gap-2.5 p-5 rounded-xl border border-border bg-card hover:border-primary/50 hover:shadow-md transition-all duration-200 active:scale-[0.97]"
+                className="relative"
                 initial={{ opacity: 0, y: 16 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.3 + index * 0.06, duration: 0.35 }}
-                whileTap={{ scale: 0.95 }}
               >
-                <div className={`w-12 h-12 rounded-xl flex items-center justify-center text-xl ${avatar.color} shadow-sm`}>
-                  {avatar.emoji}
-                </div>
-                <span className="font-semibold text-foreground text-sm">{name}</span>
-              </motion.button>
+                <button
+                  onClick={() => onSelect(name)}
+                  className="w-full flex flex-col items-center gap-2.5 p-5 rounded-xl border border-border bg-card hover:border-primary/50 hover:shadow-md transition-all duration-200 active:scale-[0.97]"
+                >
+                  <MemberAvatar
+                    emoji={display.emoji}
+                    color={display.color}
+                    avatarUrl={display.avatarUrl}
+                    size="lg"
+                  />
+                  <span className="font-semibold text-foreground text-sm">{name}</span>
+                </button>
+                <button
+                  onClick={(e) => { e.stopPropagation(); setEditingMember(name); }}
+                  className="absolute top-2 right-2 w-7 h-7 rounded-lg bg-secondary/80 backdrop-blur-sm flex items-center justify-center text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
+                  title="Edit avatar"
+                >
+                  <Pencil className="w-3.5 h-3.5" />
+                </button>
+              </motion.div>
             );
           })}
         </div>
       </motion.div>
+
+      {editingMember && (() => {
+        const display = getDisplayAvatar(editingMember, profiles);
+        return (
+          <AvatarEditor
+            open
+            onClose={() => setEditingMember(null)}
+            memberName={editingMember}
+            currentEmoji={display.emoji}
+            currentColor={display.color}
+            currentAvatarUrl={display.avatarUrl}
+            onSaved={fetchProfiles}
+          />
+        );
+      })()}
     </div>
   );
 }

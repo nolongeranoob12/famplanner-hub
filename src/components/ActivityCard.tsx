@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { activityConfig, memberAvatars, getMemberPhone, reactionEmojis, toggleReaction, type Activity, type Reaction } from '@/lib/activities';
+import { activityConfig, getMemberPhone, getDisplayAvatar, reactionEmojis, toggleReaction, type Activity, type Reaction, type MemberProfile } from '@/lib/activities';
+import { MemberAvatar } from '@/components/MemberAvatar';
 import { Trash2, CalendarDays, Clock, Phone, MessageCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { formatDistanceToNow, format } from 'date-fns';
@@ -12,11 +13,12 @@ interface ActivityCardProps {
   currentUser?: string;
   reactions?: Reaction[];
   onReactionChange?: () => void;
+  profiles?: Record<string, MemberProfile>;
 }
 
-export function ActivityCard({ activity, onDelete, currentUser, reactions = [], onReactionChange }: ActivityCardProps) {
+export function ActivityCard({ activity, onDelete, currentUser, reactions = [], onReactionChange, profiles = {} }: ActivityCardProps) {
   const config = activityConfig[activity.type];
-  const avatar = memberAvatars[activity.member_name] ?? { color: 'bg-primary', emoji: '👤' };
+  const avatar = getDisplayAvatar(activity.member_name, profiles);
   const wasEdited = activity.updated_at !== activity.created_at;
   const isOwner = currentUser === activity.member_name;
   const [phone, setPhone] = useState('');
@@ -75,9 +77,7 @@ export function ActivityCard({ activity, onDelete, currentUser, reactions = [], 
       <div className="p-4">
         <div className="flex items-start gap-3">
           {/* Avatar */}
-          <div className={`w-10 h-10 rounded-lg flex items-center justify-center text-lg shrink-0 ${avatar.color} shadow-sm`}>
-            {avatar.emoji}
-          </div>
+          <MemberAvatar emoji={avatar.emoji} color={avatar.color} avatarUrl={avatar.avatarUrl} size="md" />
 
           <div className="flex-1 min-w-0">
             {/* Header row */}

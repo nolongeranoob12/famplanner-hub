@@ -5,7 +5,8 @@ import { ActivityCard } from '@/components/ActivityCard';
 import { ActivityCalendar } from '@/components/ActivityCalendar';
 import { NamePicker } from '@/components/NamePicker';
 import { PhoneSettings } from '@/components/PhoneSettings';
-import { getActivities, addActivity, deleteActivity, getReactions, type Activity, type ActivityType, type Reaction, memberAvatars } from '@/lib/activities';
+import { MemberAvatar } from '@/components/MemberAvatar';
+import { getActivities, addActivity, deleteActivity, getReactions, getAllMemberProfiles, getDisplayAvatar, type Activity, type ActivityType, type Reaction, type MemberProfile } from '@/lib/activities';
 import { useActivityNotifications } from '@/hooks/useActivityNotifications';
 import { usePushSubscription } from '@/hooks/usePushSubscription';
 import { NotificationBell } from '@/components/NotificationBell';
@@ -20,9 +21,17 @@ export default function Index() {
   const [loading, setLoading] = useState(true);
   const [currentUser, setCurrentUser] = useState<string | null>(() => localStorage.getItem('chau_family_user'));
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  const [profiles, setProfiles] = useState<Record<string, MemberProfile>>({});
 
   useActivityNotifications(currentUser);
   const pushSubscription = usePushSubscription(currentUser);
+
+  const fetchProfiles = useCallback(async () => {
+    try {
+      const p = await getAllMemberProfiles();
+      setProfiles(p);
+    } catch { /* non-critical */ }
+  }, []);
 
   const fetchReactions = useCallback(async (acts: Activity[]) => {
     try {
@@ -47,8 +56,9 @@ export default function Index() {
   useEffect(() => {
     if (currentUser) {
       fetchActivities();
+      fetchProfiles();
     }
-  }, [currentUser, fetchActivities]);
+  }, [currentUser, fetchActivities, fetchProfiles]);
 
   const handleSelectUser = (name: string) => {
     localStorage.setItem('chau_family_user', name);
@@ -84,7 +94,7 @@ export default function Index() {
     return <NamePicker onSelect={handleSelectUser} />;
   }
 
-  const avatar = memberAvatars[currentUser] ?? { color: 'bg-primary', emoji: '👤' };
+  const avatar = getDisplayAvatar(currentUser, profiles);
 
   const filteredActivities = selectedDate
     ? activities.filter((a) => a.activity_date && isSameDay(new Date(a.activity_date + 'T00:00:00'), selectedDate))
@@ -108,9 +118,7 @@ export default function Index() {
             <p className="text-[11px] text-muted-foreground">Family activity board</p>
           </div>
           <div className="flex items-center gap-1.5">
-            <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-sm ${avatar.color} shadow-sm`}>
-              {avatar.emoji}
-            </div>
+            <MemberAvatar emoji={avatar.emoji} color={avatar.color} avatarUrl={avatar.avatarUrl} size="sm" />
             <span className="text-xs font-semibold text-foreground hidden sm:inline">{currentUser}</span>
             <PhoneSettings currentUser={currentUser} />
             <NotificationBell
@@ -132,7 +140,7 @@ export default function Index() {
         animate={{ opacity: 1 }}
         transition={{ delay: 0.15, duration: 0.4 }}
       >
-        <AddActivityForm onAdd={handleAdd} currentUser={currentUser} />
+        <AddActivityForm onAdd={handleAdd} currentUser={currentUser} profiles={profiles} />
 
         {!loading && (
           <motion.div
@@ -187,6 +195,7 @@ export default function Index() {
                   currentUser={currentUser}
                   reactions={reactions[activity.id] ?? []}
                   onReactionChange={() => fetchReactions(activities)}
+                  profiles={profiles}
                 />
               ))}
             </AnimatePresence>
