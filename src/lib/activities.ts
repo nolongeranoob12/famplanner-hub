@@ -180,6 +180,28 @@ export async function uploadMemberAvatar(file: File): Promise<string> {
   return urlData.publicUrl;
 }
 
+// ── Member activity status ─────────────────────────────────────────
+
+export async function getMemberLastActive(): Promise<Record<string, string>> {
+  const { data } = await supabase
+    .from('activities')
+    .select('member_name, created_at')
+    .order('created_at', { ascending: false });
+  const map: Record<string, string> = {};
+  for (const row of data ?? []) {
+    if (!map[row.member_name]) {
+      map[row.member_name] = row.created_at;
+    }
+  }
+  return map;
+}
+
+export function isRecentlyActive(lastActive: string | undefined, withinMinutes = 60): boolean {
+  if (!lastActive) return false;
+  const diff = Date.now() - new Date(lastActive).getTime();
+  return diff < withinMinutes * 60 * 1000;
+}
+
 // Helper to get display avatar (custom overrides default)
 export function getDisplayAvatar(memberName: string, profiles: Record<string, MemberProfile>): { emoji: string; color: string; avatarUrl?: string } {
   const defaults = memberAvatars[memberName] ?? { color: 'bg-primary', emoji: '👤' };
