@@ -12,6 +12,7 @@ import { NotificationBell } from '@/components/NotificationBell';
 import { Loader2, LogOut, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
+import { motion, AnimatePresence } from 'framer-motion';
 
 export default function Index() {
   const [activities, setActivities] = useState<Activity[]>([]);
@@ -82,7 +83,12 @@ export default function Index() {
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="sticky top-0 z-10 bg-card/80 backdrop-blur-xl border-b border-border">
+      <motion.header
+        className="sticky top-0 z-10 bg-card/80 backdrop-blur-xl border-b border-border"
+        initial={{ y: -60 }}
+        animate={{ y: 0 }}
+        transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+      >
         <div className="max-w-xl mx-auto px-4 py-3 flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center shadow-sm">
             <Users className="w-5 h-5 text-primary-foreground" />
@@ -107,13 +113,26 @@ export default function Index() {
             </Button>
           </div>
         </div>
-      </header>
+      </motion.header>
 
       {/* Main */}
-      <main className="max-w-xl mx-auto px-4 py-5 space-y-4">
+      <motion.main
+        className="max-w-xl mx-auto px-4 py-5 space-y-4"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.15, duration: 0.4 }}
+      >
         <AddActivityForm onAdd={handleAdd} currentUser={currentUser} />
 
-        {!loading && <ActivityCalendar activities={activities} selectedDate={selectedDate} onSelectDate={setSelectedDate} />}
+        {!loading && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2, duration: 0.35 }}
+          >
+            <ActivityCalendar activities={activities} selectedDate={selectedDate} onSelectDate={setSelectedDate} />
+          </motion.div>
+        )}
 
         {!loading && filteredActivities.length > 0 && (
           <div className="flex items-center gap-3 pt-1">
@@ -131,7 +150,12 @@ export default function Index() {
             <p className="text-sm text-muted-foreground">Loading…</p>
           </div>
         ) : filteredActivities.length === 0 ? (
-          <div className="text-center py-20">
+          <motion.div
+            className="text-center py-20"
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.3 }}
+          >
             <div className="w-16 h-16 rounded-2xl bg-muted flex items-center justify-center mx-auto mb-3">
               <span className="text-3xl">📅</span>
             </div>
@@ -141,15 +165,17 @@ export default function Index() {
             <p className="text-sm text-muted-foreground mt-1 max-w-[240px] mx-auto">
               {selectedDate ? 'Try selecting a different date or post a new activity.' : 'Post what you\'re up to so the family knows!'}
             </p>
-          </div>
+          </motion.div>
         ) : (
           <div className="space-y-3">
-            {filteredActivities.map((activity) => (
-              <ActivityCard key={activity.id} activity={activity} onDelete={handleDelete} currentUser={currentUser} />
-            ))}
+            <AnimatePresence mode="popLayout">
+              {filteredActivities.map((activity) => (
+                <ActivityCard key={activity.id} activity={activity} onDelete={handleDelete} currentUser={currentUser} />
+              ))}
+            </AnimatePresence>
           </div>
         )}
-      </main>
+      </motion.main>
     </div>
   );
 }
