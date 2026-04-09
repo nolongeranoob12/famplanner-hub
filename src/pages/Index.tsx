@@ -150,6 +150,7 @@ export default function Index() {
       </motion.header>
 
       {/* Main */}
+      <PullToRefresh onRefresh={handleRefresh}>
       <motion.main
         className="max-w-xl mx-auto px-4 py-5 space-y-4"
         initial={{ opacity: 0 }}
