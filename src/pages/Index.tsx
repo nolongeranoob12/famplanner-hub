@@ -11,7 +11,8 @@ import { getActivities, addActivity, deleteActivity, getReactions, getAllMemberP
 import { useActivityNotifications } from '@/hooks/useActivityNotifications';
 import { usePushSubscription } from '@/hooks/usePushSubscription';
 import { NotificationBell } from '@/components/NotificationBell';
-import { Loader2, LogOut, Users } from 'lucide-react';
+import { LogOut, Users } from 'lucide-react';
+import { PullToRefresh } from '@/components/PullToRefresh';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
