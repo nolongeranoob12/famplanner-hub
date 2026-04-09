@@ -56,6 +56,17 @@ export default function Index() {
     }
   }, [fetchReactions]);
 
+  const handleRefresh = useCallback(async () => {
+    const data = await getActivities();
+    setActivities(data);
+    await Promise.all([
+      fetchReactions(data),
+      fetchProfiles(),
+      getMemberLastActive().then(setLastActive).catch(() => {}),
+    ]);
+    toast.success('Refreshed!');
+  }, [fetchReactions, fetchProfiles]);
+
   useEffect(() => {
     if (currentUser) {
       fetchActivities();
