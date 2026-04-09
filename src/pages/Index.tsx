@@ -11,7 +11,8 @@ import { getActivities, addActivity, deleteActivity, getReactions, getAllMemberP
 import { useActivityNotifications } from '@/hooks/useActivityNotifications';
 import { usePushSubscription } from '@/hooks/usePushSubscription';
 import { NotificationBell } from '@/components/NotificationBell';
-import { Loader2, LogOut, Users } from 'lucide-react';
+import { LogOut, Users } from 'lucide-react';
+import { PullToRefresh } from '@/components/PullToRefresh';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -54,6 +55,17 @@ export default function Index() {
       setLoading(false);
     }
   }, [fetchReactions]);
+
+  const handleRefresh = useCallback(async () => {
+    const data = await getActivities();
+    setActivities(data);
+    await Promise.all([
+      fetchReactions(data),
+      fetchProfiles(),
+      getMemberLastActive().then(setLastActive).catch(() => {}),
+    ]);
+    toast.success('Refreshed!');
+  }, [fetchReactions, fetchProfiles]);
 
   useEffect(() => {
     if (currentUser) {
@@ -138,6 +150,7 @@ export default function Index() {
       </motion.header>
 
       {/* Main */}
+      <PullToRefresh onRefresh={handleRefresh}>
       <motion.main
         className="max-w-xl mx-auto px-4 py-5 space-y-4"
         initial={{ opacity: 0 }}
@@ -204,6 +217,7 @@ export default function Index() {
           </div>
         )}
       </motion.main>
+      </PullToRefresh>
     </div>
   );
 }
