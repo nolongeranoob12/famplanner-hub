@@ -217,6 +217,7 @@ export default function Index() {
           </div>
         )}
       </motion.main>
+      </PullToRefresh>
     </div>
   );
 }
