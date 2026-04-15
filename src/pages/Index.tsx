@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { isSameDay } from 'date-fns';
+import { isSameDay, format } from 'date-fns';
 import { AddActivityForm } from '@/components/AddActivityForm';
 import { ActivityCard } from '@/components/ActivityCard';
 import { ActivityCalendar } from '@/components/ActivityCalendar';
@@ -215,18 +215,47 @@ export default function Index() {
         ) : (
           <div className="space-y-3">
             <AnimatePresence mode="popLayout">
-              {filteredActivities.map((activity) => (
-                <ActivityCard
-                  key={activity.id}
-                  activity={activity}
-                  onDelete={handleDelete}
-                  currentUser={currentUser}
-                  reactions={reactions[activity.id] ?? []}
-                  onReactionChange={() => fetchReactions(activities)}
-                  profiles={profiles}
-                  isActive={isRecentlyActive(lastActive[activity.member_name])}
-                />
-              ))}
+              {filteredActivities.map((activity, idx) => {
+                const actDate = activity.activity_date
+                  ? new Date(activity.activity_date + 'T00:00:00')
+                  : new Date(activity.created_at);
+                const monthKey = format(actDate, 'yyyy-MM');
+                const prevActivity = filteredActivities[idx - 1];
+                const prevDate = prevActivity
+                  ? (prevActivity.activity_date
+                      ? new Date(prevActivity.activity_date + 'T00:00:00')
+                      : new Date(prevActivity.created_at))
+                  : null;
+                const prevMonthKey = prevDate ? format(prevDate, 'yyyy-MM') : null;
+                const showMonthHeader = monthKey !== prevMonthKey;
+
+                return (
+                  <div key={activity.id}>
+                    {showMonthHeader && (
+                      <motion.div
+                        initial={{ opacity: 0, y: -4 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="flex items-center gap-3 py-2"
+                      >
+                        <div className="h-px flex-1 bg-border" />
+                        <span className="text-xs font-semibold text-primary tracking-wide">
+                          📅 {format(actDate, 'MMMM yyyy')}
+                        </span>
+                        <div className="h-px flex-1 bg-border" />
+                      </motion.div>
+                    )}
+                    <ActivityCard
+                      activity={activity}
+                      onDelete={handleDelete}
+                      currentUser={currentUser}
+                      reactions={reactions[activity.id] ?? []}
+                      onReactionChange={() => fetchReactions(activities)}
+                      profiles={profiles}
+                      isActive={isRecentlyActive(lastActive[activity.member_name])}
+                    />
+                  </div>
+                );
+              })}
             </AnimatePresence>
           </div>
         )}
