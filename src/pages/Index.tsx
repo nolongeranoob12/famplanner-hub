@@ -165,6 +165,14 @@ export default function Index() {
       >
         <AddActivityForm onAdd={handleAdd} currentUser={currentUser} profiles={profiles} />
 
+        <MemberFilterChips
+          profiles={profiles}
+          selectedMember={selectedMember}
+          onSelect={setSelectedMember}
+          lastActive={lastActive}
+          isRecentlyActive={isRecentlyActive}
+        />
+
         {!loading && (
           <motion.div
             initial={{ opacity: 0, y: 10 }}
