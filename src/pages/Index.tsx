@@ -14,6 +14,8 @@ import { NotificationBell } from '@/components/NotificationBell';
 import { LogOut, Users } from 'lucide-react';
 import { PullToRefresh } from '@/components/PullToRefresh';
 import { Button } from '@/components/ui/button';
+import { MemberFilterChips } from '@/components/MemberFilterChips';
+import { haptic } from '@/lib/haptics';
 import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -23,6 +25,7 @@ export default function Index() {
   const [loading, setLoading] = useState(true);
   const [currentUser, setCurrentUser] = useState<string | null>(() => localStorage.getItem('chau_family_user'));
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  const [selectedMember, setSelectedMember] = useState<string | null>(null);
   const [profiles, setProfiles] = useState<Record<string, MemberProfile>>({});
   const [lastActive, setLastActive] = useState<Record<string, string>>({});
 

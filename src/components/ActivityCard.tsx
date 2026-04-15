@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { activityConfig, getMemberPhone, getDisplayAvatar, reactionEmojis, toggleReaction, type Activity, type Reaction, type MemberProfile } from '@/lib/activities';
+import { haptic } from '@/lib/haptics';
 import { MemberAvatar } from '@/components/MemberAvatar';
 import { Trash2, CalendarDays, Clock, Phone, MessageCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -32,6 +33,7 @@ export function ActivityCard({ activity, onDelete, currentUser, reactions = [], 
 
   const handleReaction = async (emoji: string) => {
     if (!currentUser || reacting) return;
+    haptic('light');
     setReacting(true);
     try {
       await toggleReaction(activity.id, currentUser, emoji);
