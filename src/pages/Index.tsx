@@ -60,6 +60,7 @@ export default function Index() {
   }, [fetchReactions]);
 
   const handleRefresh = useCallback(async () => {
+    haptic('medium');
     const data = await getActivities();
     setActivities(data);
     await Promise.all([
@@ -115,9 +116,11 @@ export default function Index() {
   const avatar = getDisplayAvatar(currentUser, profiles);
   const userIsActive = isRecentlyActive(lastActive[currentUser]);
 
-  const filteredActivities = selectedDate
-    ? activities.filter((a) => a.activity_date && isSameDay(new Date(a.activity_date + 'T00:00:00'), selectedDate))
-    : activities;
+  const filteredActivities = activities.filter((a) => {
+    if (selectedDate && !(a.activity_date && isSameDay(new Date(a.activity_date + 'T00:00:00'), selectedDate))) return false;
+    if (selectedMember && a.member_name !== selectedMember) return false;
+    return true;
+  });
 
   return (
     <div className="min-h-screen bg-background">
