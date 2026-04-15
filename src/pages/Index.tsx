@@ -14,6 +14,8 @@ import { NotificationBell } from '@/components/NotificationBell';
 import { LogOut, Users } from 'lucide-react';
 import { PullToRefresh } from '@/components/PullToRefresh';
 import { Button } from '@/components/ui/button';
+import { MemberFilterChips } from '@/components/MemberFilterChips';
+import { haptic } from '@/lib/haptics';
 import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -23,6 +25,7 @@ export default function Index() {
   const [loading, setLoading] = useState(true);
   const [currentUser, setCurrentUser] = useState<string | null>(() => localStorage.getItem('chau_family_user'));
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  const [selectedMember, setSelectedMember] = useState<string | null>(null);
   const [profiles, setProfiles] = useState<Record<string, MemberProfile>>({});
   const [lastActive, setLastActive] = useState<Record<string, string>>({});
 
@@ -57,6 +60,7 @@ export default function Index() {
   }, [fetchReactions]);
 
   const handleRefresh = useCallback(async () => {
+    haptic('medium');
     const data = await getActivities();
     setActivities(data);
     await Promise.all([
@@ -112,9 +116,11 @@ export default function Index() {
   const avatar = getDisplayAvatar(currentUser, profiles);
   const userIsActive = isRecentlyActive(lastActive[currentUser]);
 
-  const filteredActivities = selectedDate
-    ? activities.filter((a) => a.activity_date && isSameDay(new Date(a.activity_date + 'T00:00:00'), selectedDate))
-    : activities;
+  const filteredActivities = activities.filter((a) => {
+    if (selectedDate && !(a.activity_date && isSameDay(new Date(a.activity_date + 'T00:00:00'), selectedDate))) return false;
+    if (selectedMember && a.member_name !== selectedMember) return false;
+    return true;
+  });
 
   return (
     <div className="min-h-screen bg-background">
@@ -158,6 +164,14 @@ export default function Index() {
         transition={{ delay: 0.15, duration: 0.4 }}
       >
         <AddActivityForm onAdd={handleAdd} currentUser={currentUser} profiles={profiles} />
+
+        <MemberFilterChips
+          profiles={profiles}
+          selectedMember={selectedMember}
+          onSelect={setSelectedMember}
+          lastActive={lastActive}
+          isRecentlyActive={isRecentlyActive}
+        />
 
         {!loading && (
           <motion.div
