@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { isSameDay } from 'date-fns';
+import { isSameDay, format } from 'date-fns';
 import { AddActivityForm } from '@/components/AddActivityForm';
 import { ActivityCard } from '@/components/ActivityCard';
 import { ActivityCalendar } from '@/components/ActivityCalendar';
