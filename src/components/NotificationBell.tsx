@@ -5,43 +5,35 @@ import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useNotifications } from '@/hooks/useNotifications';
 import type { SubscribeResult } from '@/hooks/usePushSubscription';
-import { memberAvatars } from '@/lib/activities';
+import { getDisplayAvatar, type Profile } from '@/lib/profiles';
 import { formatDistanceToNow } from 'date-fns';
 import { toast } from 'sonner';
 
 interface NotificationBellProps {
-  currentUser: string;
+  currentUserId: string;
   pushSubscribed: boolean | null;
   onEnablePush: () => Promise<SubscribeResult>;
+  profiles: Record<string, Profile>;
 }
 
 const subscribeErrorMessage: Record<Exclude<SubscribeResult, { ok: true }>['reason'], string> = {
-  'no-user': 'Please choose your name first.',
+  'no-user': 'Please sign in first.',
   'preview': 'Open the published app to turn on phone notifications.',
-  'ios-home-screen': 'On iPhone, tap Share → "Add to Home Screen", then open the app from your Home Screen to enable notifications.',
+  'ios-home-screen': 'On iPhone, tap Share → "Add to Home Screen", then open from your Home Screen.',
   'unsupported': 'This device/browser does not support background notifications here.',
-  'blocked': 'Notifications are blocked for this app. Please allow them in your browser settings.',
-  'save-failed': 'Notifications were allowed, but saving this phone failed. Please try again.',
-  'subscribe-failed': 'Could not register this phone for notifications. Please try again.',
+  'blocked': 'Notifications are blocked. Please allow them in your browser settings.',
+  'save-failed': 'Notifications were allowed, but saving failed. Please try again.',
+  'subscribe-failed': 'Could not register for notifications. Please try again.',
 };
 
-export function NotificationBell({ currentUser, pushSubscribed, onEnablePush }: NotificationBellProps) {
-  const { notifications, unreadCount, markAllRead, markRead } = useNotifications(currentUser);
+export function NotificationBell({ currentUserId, pushSubscribed, onEnablePush, profiles }: NotificationBellProps) {
+  const { notifications, unreadCount, markAllRead, markRead } = useNotifications(currentUserId);
 
-  const actionEmoji: Record<string, string> = {
-    created: '🆕',
-    updated: '✏️',
-    deleted: '🗑️',
-  };
+  const actionEmoji: Record<string, string> = { created: '🆕', updated: '✏️', deleted: '🗑️' };
 
   const handleEnablePush = async () => {
     const result = await onEnablePush();
-
-    if (result.ok) {
-      toast.success('Phone notifications are now on.');
-      return;
-    }
-
+    if (result.ok) { toast.success('Phone notifications are now on.'); return; }
     const reason = (result as { ok: false; reason: keyof typeof subscribeErrorMessage; detail?: string }).reason;
     const detail = (result as { ok: false; detail?: string }).detail;
     toast.error(`${subscribeErrorMessage[reason]} (${reason}${detail ? ': ' + detail : ''})`);
@@ -80,14 +72,15 @@ export function NotificationBell({ currentUser, pushSubscribed, onEnablePush }: 
         )}
         <ScrollArea className="max-h-80">
           {notifications.length === 0 ? (
-            <div className="py-8 text-center text-sm text-muted-foreground">
-              No notifications yet
-            </div>
+            <div className="py-8 text-center text-sm text-muted-foreground">No notifications yet</div>
           ) : (
             <div className="divide-y divide-border">
               {notifications.map((n) => {
                 const log = n.activity_log;
-                const emoji = log ? (memberAvatars[log.member_name]?.emoji ?? '👤') : '👤';
+                const actorId = log?.user_id ?? '';
+                const actor = actorId ? getDisplayAvatar(actorId, profiles) : null;
+                const emoji = actor?.emoji ?? '👤';
+                const name = actor?.displayName ?? log?.member_name ?? 'Someone';
                 const action = log?.action ?? 'updated';
                 return (
                   <button
@@ -99,21 +92,16 @@ export function NotificationBell({ currentUser, pushSubscribed, onEnablePush }: 
                       <span className="text-lg mt-0.5">{emoji}</span>
                       <div className="flex-1 min-w-0">
                         <p className={`text-sm leading-snug ${!n.is_read ? 'font-semibold text-foreground' : 'text-muted-foreground'}`}>
-                          {actionEmoji[action] ?? '📌'} {log?.member_name ?? 'Someone'}{' '}
-                          {action} an activity
+                          {actionEmoji[action] ?? '📌'} {name} {action} an activity
                         </p>
                         {log?.description && (
-                          <p className="text-xs text-muted-foreground mt-0.5 truncate">
-                            {log.description}
-                          </p>
+                          <p className="text-xs text-muted-foreground mt-0.5 truncate">{log.description}</p>
                         )}
                         <p className="text-[10px] text-muted-foreground/70 mt-1">
                           {formatDistanceToNow(new Date(n.created_at), { addSuffix: true })}
                         </p>
                       </div>
-                      {!n.is_read && (
-                        <span className="w-2 h-2 rounded-full bg-primary mt-2 flex-shrink-0" />
-                      )}
+                      {!n.is_read && <span className="w-2 h-2 rounded-full bg-primary mt-2 flex-shrink-0" />}
                     </div>
                   </button>
                 );

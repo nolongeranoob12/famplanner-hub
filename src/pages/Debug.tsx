@@ -13,7 +13,7 @@ function StatusIcon({ ok }: { ok: boolean | null }) {
 
 export default function Debug() {
   const navigate = useNavigate();
-  const currentUser = localStorage.getItem('chau_family_user');
+  const currentUser = null; // legacy: identity now via auth
   const [info, setInfo] = useState<Record<string, any>>({});
   const [loading, setLoading] = useState(true);
 

@@ -1,5 +1,7 @@
-import { useState, useEffect } from 'react';
-import { activityConfig, getMemberPhone, getDisplayAvatar, reactionEmojis, toggleReaction, type Activity, type Reaction, type MemberProfile } from '@/lib/activities';
+import { useState } from 'react';
+import { activityConfig, type Activity } from '@/lib/activities';
+import { reactionEmojis, toggleReaction, type Reaction } from '@/lib/reactions';
+import { getDisplayAvatar, type Profile } from '@/lib/profiles';
 import { haptic } from '@/lib/haptics';
 import { MemberAvatar } from '@/components/MemberAvatar';
 import { Trash2, CalendarDays, Clock, Phone, MessageCircle } from 'lucide-react';
@@ -11,45 +13,44 @@ import { cn } from '@/lib/utils';
 interface ActivityCardProps {
   activity: Activity;
   onDelete: (id: string) => void;
-  currentUser?: string;
+  currentUserId: string;
   reactions?: Reaction[];
   onReactionChange?: () => void;
-  profiles?: Record<string, MemberProfile>;
+  profiles: Record<string, Profile>;
   isActive?: boolean;
 }
 
-export function ActivityCard({ activity, onDelete, currentUser, reactions = [], onReactionChange, profiles = {}, isActive }: ActivityCardProps) {
+export function ActivityCard({ activity, onDelete, currentUserId, reactions = [], onReactionChange, profiles, isActive }: ActivityCardProps) {
   const config = activityConfig[activity.type];
-  const avatar = getDisplayAvatar(activity.member_name, profiles);
+  const authorId = activity.user_id ?? '';
+  const avatar = authorId
+    ? getDisplayAvatar(authorId, profiles)
+    : { emoji: '👤', color: 'bg-muted', avatarUrl: undefined, displayName: activity.member_name || 'Unknown' };
   const wasEdited = activity.updated_at !== activity.created_at;
-  const isOwner = currentUser === activity.member_name;
-  const [phone, setPhone] = useState('');
+  const isOwner = currentUserId === activity.user_id;
+  const me = profiles[currentUserId];
+  const authorProfile = authorId ? profiles[authorId] : undefined;
+  const phone = authorProfile?.phone ?? '';
   const [imageExpanded, setImageExpanded] = useState(false);
   const [reacting, setReacting] = useState(false);
 
-  useEffect(() => {
-    getMemberPhone(activity.member_name).then(setPhone);
-  }, [activity.member_name]);
-
   const handleReaction = async (emoji: string) => {
-    if (!currentUser || reacting) return;
+    if (reacting) return;
     haptic('light');
     setReacting(true);
     try {
-      await toggleReaction(activity.id, currentUser, emoji);
+      await toggleReaction(activity.id, currentUserId, me?.display_name ?? 'Someone', emoji);
       onReactionChange?.();
     } finally {
       setReacting(false);
     }
   };
 
-  // Group reactions by emoji
-  const reactionCounts: Record<string, { count: number; members: string[]; userReacted: boolean }> = {};
+  const reactionCounts: Record<string, { count: number; userReacted: boolean }> = {};
   for (const r of reactions) {
-    if (!reactionCounts[r.emoji]) reactionCounts[r.emoji] = { count: 0, members: [], userReacted: false };
+    if (!reactionCounts[r.emoji]) reactionCounts[r.emoji] = { count: 0, userReacted: false };
     reactionCounts[r.emoji].count++;
-    reactionCounts[r.emoji].members.push(r.member_name);
-    if (r.member_name === currentUser) reactionCounts[r.emoji].userReacted = true;
+    if (r.user_id === currentUserId) reactionCounts[r.emoji].userReacted = true;
   }
 
   return (
@@ -61,60 +62,36 @@ export function ActivityCard({ activity, onDelete, currentUser, reactions = [], 
       transition={{ duration: 0.3, ease: 'easeOut' }}
       className="bg-card rounded-xl border border-border hover:border-border/80 hover:shadow-md transition-shadow duration-200 overflow-hidden group"
     >
-      {/* Photo */}
       {activity.image_url && (
-        <button
-          type="button"
-          onClick={() => setImageExpanded(!imageExpanded)}
-          className="w-full overflow-hidden"
-        >
-          <img
-            src={activity.image_url}
-            alt="Activity photo"
-            className={`w-full object-cover transition-all duration-300 ${imageExpanded ? 'max-h-96' : 'max-h-48'}`}
-            loading="lazy"
-          />
+        <button type="button" onClick={() => setImageExpanded(!imageExpanded)} className="w-full overflow-hidden">
+          <img src={activity.image_url} alt="Activity photo" className={`w-full object-cover transition-all duration-300 ${imageExpanded ? 'max-h-96' : 'max-h-48'}`} loading="lazy" />
         </button>
       )}
 
       <div className="p-4">
         <div className="flex items-start gap-3">
-          {/* Avatar */}
           <MemberAvatar emoji={avatar.emoji} color={avatar.color} avatarUrl={avatar.avatarUrl} size="md" isActive={isActive} />
 
           <div className="flex-1 min-w-0">
-            {/* Header row */}
             <div className="flex items-center gap-2 flex-wrap mb-0.5">
-              <span className="font-semibold text-foreground text-sm">{activity.member_name}</span>
+              <span className="font-semibold text-foreground text-sm">{avatar.displayName}</span>
               <span className={`text-[11px] px-2.5 py-1 rounded-full font-semibold shadow-sm ${config.bgClass} ${config.textClass}`}>
                 {config.emoji} {config.label}
               </span>
-              {phone && (
+              {phone && !isOwner && (
                 <span className="flex items-center gap-1 ml-auto">
-                  <a
-                    href={`tel:${phone}`}
-                    className="inline-flex items-center justify-center w-7 h-7 rounded-lg bg-secondary text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
-                    title={`Call ${activity.member_name}`}
-                  >
+                  <a href={`tel:${phone}`} className="inline-flex items-center justify-center w-7 h-7 rounded-lg bg-secondary text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors" title={`Call ${avatar.displayName}`}>
                     <Phone className="w-3.5 h-3.5" />
                   </a>
-                  <a
-                    href={`https://wa.me/${phone.replace(/[^0-9]/g, '')}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center justify-center w-7 h-7 rounded-lg bg-secondary text-muted-foreground hover:text-accent hover:bg-accent/10 transition-colors"
-                    title={`WhatsApp ${activity.member_name}`}
-                  >
+                  <a href={`https://wa.me/${phone.replace(/[^0-9]/g, '')}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center justify-center w-7 h-7 rounded-lg bg-secondary text-muted-foreground hover:text-accent hover:bg-accent/10 transition-colors" title={`WhatsApp ${avatar.displayName}`}>
                     <MessageCircle className="w-3.5 h-3.5" />
                   </a>
                 </span>
               )}
             </div>
 
-            {/* Description */}
             <p className="text-foreground/80 text-sm leading-relaxed mt-1">{activity.description}</p>
 
-            {/* Date & timestamp row */}
             <div className="mt-2.5 flex items-center gap-3 flex-wrap">
               {activity.activity_date && (
                 <div className="flex items-center gap-1.5 text-xs font-medium text-primary">
@@ -134,7 +111,6 @@ export function ActivityCard({ activity, onDelete, currentUser, reactions = [], 
               </div>
             </div>
 
-            {/* Reactions */}
             <div className="mt-2.5 flex items-center gap-1.5 flex-wrap">
               {reactionEmojis.map((emoji) => {
                 const info = reactionCounts[emoji];
@@ -145,13 +121,10 @@ export function ActivityCard({ activity, onDelete, currentUser, reactions = [], 
                     key={emoji}
                     onClick={() => handleReaction(emoji)}
                     disabled={reacting}
-                    title={info?.members.join(', ')}
                     className={cn(
                       'inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs transition-all duration-150',
                       'border hover:scale-105 active:scale-95',
-                      userReacted
-                        ? 'border-primary/40 bg-primary/10 text-primary font-semibold'
-                        : 'border-border bg-secondary/50 text-muted-foreground hover:bg-secondary'
+                      userReacted ? 'border-primary/40 bg-primary/10 text-primary font-semibold' : 'border-border bg-secondary/50 text-muted-foreground hover:bg-secondary'
                     )}
                   >
                     <span className="text-sm">{emoji}</span>
@@ -162,14 +135,8 @@ export function ActivityCard({ activity, onDelete, currentUser, reactions = [], 
             </div>
           </div>
 
-          {/* Delete button */}
           {isOwner && (
-            <Button
-              variant="ghost"
-              size="icon"
-              className="sm:opacity-0 sm:group-hover:opacity-100 transition-opacity shrink-0 text-muted-foreground hover:text-destructive rounded-lg h-8 w-8"
-              onClick={() => onDelete(activity.id)}
-            >
+            <Button variant="ghost" size="icon" className="shrink-0 text-muted-foreground hover:text-destructive rounded-lg h-8 w-8" onClick={() => onDelete(activity.id)}>
               <Trash2 className="w-4 h-4" />
             </Button>
           )}
