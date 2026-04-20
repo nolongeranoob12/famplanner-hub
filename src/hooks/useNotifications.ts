@@ -4,6 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 export interface AppNotification {
   id: string;
   log_id: string;
+  user_id: string | null;
   member_name: string;
   is_read: boolean;
   created_at: string;
@@ -12,6 +13,7 @@ export interface AppNotification {
     action: string;
     description: string | null;
     created_at: string;
+    user_id?: string | null;
   };
 }
 
@@ -20,16 +22,16 @@ type BadgeNavigator = Navigator & {
   clearAppBadge?: () => Promise<void>;
 };
 
-export function useNotifications(currentUser: string | null) {
+export function useNotifications(currentUserId: string | null) {
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
 
   const fetchNotifications = useCallback(async () => {
-    if (!currentUser) return;
+    if (!currentUserId) return;
     const { data } = await supabase
       .from('notifications')
       .select('*, activity_log(*)')
-      .eq('member_name', currentUser)
+      .eq('user_id', currentUserId)
       .order('created_at', { ascending: false })
       .limit(30);
     if (data) {
@@ -40,10 +42,10 @@ export function useNotifications(currentUser: string | null) {
       setNotifications(mapped);
       setUnreadCount(mapped.filter((n) => !n.is_read).length);
     }
-  }, [currentUser]);
+  }, [currentUserId]);
 
   useEffect(() => {
-    if (!currentUser) return;
+    if (!currentUserId) return;
     fetchNotifications();
 
     const channel = supabase
@@ -54,10 +56,9 @@ export function useNotifications(currentUser: string | null) {
           event: 'INSERT',
           schema: 'public',
           table: 'notifications',
-          filter: `member_name=eq.${currentUser}`,
+          filter: `user_id=eq.${currentUserId}`,
         },
         async (payload) => {
-          // Fetch the full notification with joined log
           const { data } = await supabase
             .from('notifications')
             .select('*, activity_log(*)')
@@ -72,47 +73,35 @@ export function useNotifications(currentUser: string | null) {
       )
       .subscribe();
 
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [currentUser, fetchNotifications]);
+    return () => { supabase.removeChannel(channel); };
+  }, [currentUserId, fetchNotifications]);
 
   useEffect(() => {
     const badgeNavigator = navigator as BadgeNavigator;
-
     navigator.serviceWorker?.ready
-      .then((registration) => {
-        registration.active?.postMessage({ type: 'set-badge-count', count: unreadCount });
-      })
+      .then((reg) => { reg.active?.postMessage({ type: 'set-badge-count', count: unreadCount }); })
       .catch(() => undefined);
-
     if (unreadCount > 0) {
       badgeNavigator.setAppBadge?.(unreadCount).catch(() => undefined);
       return;
     }
-
     badgeNavigator.clearAppBadge?.().catch(() => undefined);
   }, [unreadCount]);
 
   const markAllRead = useCallback(async () => {
-    if (!currentUser) return;
+    if (!currentUserId) return;
     await supabase
       .from('notifications')
       .update({ is_read: true } as any)
-      .eq('member_name', currentUser)
+      .eq('user_id', currentUserId)
       .eq('is_read', false);
     setNotifications((prev) => prev.map((n) => ({ ...n, is_read: true })));
     setUnreadCount(0);
-  }, [currentUser]);
+  }, [currentUserId]);
 
   const markRead = useCallback(async (id: string) => {
-    await supabase
-      .from('notifications')
-      .update({ is_read: true } as any)
-      .eq('id', id);
-    setNotifications((prev) =>
-      prev.map((n) => (n.id === id ? { ...n, is_read: true } : n))
-    );
+    await supabase.from('notifications').update({ is_read: true } as any).eq('id', id);
+    setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, is_read: true } : n)));
     setUnreadCount((c) => Math.max(0, c - 1));
   }, []);
 

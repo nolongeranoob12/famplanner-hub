@@ -1,7 +1,7 @@
 import { useState, useRef } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { uploadMemberAvatar, setMemberAvatar } from '@/lib/activities';
+import { uploadMyAvatar, updateMyProfile } from '@/lib/profiles';
 import { Camera, Loader2, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
@@ -15,14 +15,13 @@ const emojiOptions = [
 interface AvatarEditorProps {
   open: boolean;
   onClose: () => void;
-  memberName: string;
   currentEmoji: string;
   currentColor: string;
   currentAvatarUrl?: string;
   onSaved: () => void;
 }
 
-export function AvatarEditor({ open, onClose, memberName, currentEmoji, currentColor, currentAvatarUrl, onSaved }: AvatarEditorProps) {
+export function AvatarEditor({ open, onClose, currentEmoji, currentColor, currentAvatarUrl, onSaved }: AvatarEditorProps) {
   const [selectedEmoji, setSelectedEmoji] = useState(currentEmoji);
   const [photoUrl, setPhotoUrl] = useState(currentAvatarUrl || '');
   const [photoPreview, setPhotoPreview] = useState(currentAvatarUrl || '');
@@ -41,7 +40,7 @@ export function AvatarEditor({ open, onClose, memberName, currentEmoji, currentC
     setUploading(true);
     setPhotoPreview(URL.createObjectURL(file));
     try {
-      const url = await uploadMemberAvatar(file);
+      const url = await uploadMyAvatar(file);
       setPhotoUrl(url);
       setMode('photo');
     } catch {
@@ -56,9 +55,9 @@ export function AvatarEditor({ open, onClose, memberName, currentEmoji, currentC
     setSaving(true);
     try {
       if (mode === 'photo' && photoUrl) {
-        await setMemberAvatar(memberName, undefined, photoUrl);
+        await updateMyProfile({ avatar_url: photoUrl, avatar_emoji: null });
       } else {
-        await setMemberAvatar(memberName, selectedEmoji, undefined);
+        await updateMyProfile({ avatar_emoji: selectedEmoji, avatar_url: null });
       }
       toast.success('Avatar updated!');
       onSaved();
@@ -85,7 +84,6 @@ export function AvatarEditor({ open, onClose, memberName, currentEmoji, currentC
         </DialogHeader>
 
         <div className="space-y-4">
-          {/* Preview */}
           <div className="flex justify-center">
             {mode === 'photo' && photoPreview ? (
               <div className="relative">
@@ -103,22 +101,14 @@ export function AvatarEditor({ open, onClose, memberName, currentEmoji, currentC
             )}
           </div>
 
-          {/* Photo upload */}
           <div className="flex justify-center">
             <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handlePhotoSelect} />
-            <Button
-              variant="outline"
-              size="sm"
-              className="rounded-lg"
-              onClick={() => fileRef.current?.click()}
-              disabled={uploading}
-            >
+            <Button variant="outline" size="sm" className="rounded-lg" onClick={() => fileRef.current?.click()} disabled={uploading}>
               {uploading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Camera className="w-4 h-4 mr-2" />}
               {uploading ? 'Uploading…' : 'Upload photo'}
             </Button>
           </div>
 
-          {/* Emoji grid */}
           <div>
             <p className="text-xs font-medium text-muted-foreground mb-2 text-center">Or pick an emoji</p>
             <div className="grid grid-cols-6 gap-2">

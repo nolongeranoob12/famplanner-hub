@@ -1,17 +1,14 @@
 import { useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { memberAvatars } from '@/lib/activities';
 
-export function useActivityNotifications(currentUser: string | null) {
+export function useActivityNotifications(currentUserId: string | null) {
   const permissionGranted = useRef(false);
 
   useEffect(() => {
-    if (!currentUser) return;
+    if (!currentUserId) return;
 
     if ('Notification' in window && Notification.permission === 'default') {
-      Notification.requestPermission().then((p) => {
-        permissionGranted.current = p === 'granted';
-      });
+      Notification.requestPermission().then((p) => { permissionGranted.current = p === 'granted'; });
     } else if ('Notification' in window) {
       permissionGranted.current = Notification.permission === 'granted';
     }
@@ -24,30 +21,25 @@ export function useActivityNotifications(currentUser: string | null) {
         async (payload) => {
           const record = payload.new as Record<string, unknown> | undefined;
           const oldRecord = payload.old as Record<string, unknown> | undefined;
-
-          let memberName = '';
+          let actorName = '';
           let description = '';
           let title = '';
 
           if (payload.eventType === 'INSERT' && record) {
-            memberName = record.member_name as string;
+            actorName = (record.member_name as string) || 'Someone';
             description = record.description as string;
-            const emoji = memberAvatars[memberName]?.emoji ?? '👤';
-            title = `${emoji} ${memberName} posted an activity`;
+            title = `${actorName} posted an activity`;
           } else if (payload.eventType === 'UPDATE' && record) {
-            memberName = record.member_name as string;
+            actorName = (record.member_name as string) || 'Someone';
             description = record.description as string;
-            const emoji = memberAvatars[memberName]?.emoji ?? '👤';
-            title = `${emoji} ${memberName} edited an activity`;
+            title = `${actorName} edited an activity`;
           } else if (payload.eventType === 'DELETE' && oldRecord) {
-            memberName = oldRecord.member_name as string;
-            const oldEmoji = memberAvatars[memberName]?.emoji ?? '👤';
-            title = `${oldEmoji} ${memberName} removed an activity`;
+            actorName = (oldRecord.member_name as string) || 'Someone';
+            title = `${actorName} removed an activity`;
           }
 
           if (!title) return;
 
-          // Show in-app notification if tab is visible
           if ('Notification' in window && Notification.permission === 'granted') {
             try {
               new Notification(title, {
@@ -55,22 +47,12 @@ export function useActivityNotifications(currentUser: string | null) {
                 icon: '/pwa-192.png',
                 tag: `activity-${(record?.id as string) ?? 'deleted'}`,
               });
-            } catch {
-              // may fail in some contexts
-            }
+            } catch { /* ignore */ }
           }
-
-          // Push notifications are now sent server-side via the database trigger
-          // using pg_net, so they work even when no one has the app open
-
-          // Update app badge for all members via the notifications table count
-          // (badge sync happens automatically via useNotifications hook)
         }
       )
       .subscribe();
 
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [currentUser]);
+    return () => { supabase.removeChannel(channel); };
+  }, [currentUserId]);
 }

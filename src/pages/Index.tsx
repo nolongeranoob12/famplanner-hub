@@ -4,44 +4,52 @@ import { AddActivityForm } from '@/components/AddActivityForm';
 import { ActivityCard } from '@/components/ActivityCard';
 import { ActivityCalendar } from '@/components/ActivityCalendar';
 import { ActivityFeedSkeleton } from '@/components/ActivityCardSkeleton';
-import { NamePicker } from '@/components/NamePicker';
-import { PhoneSettings } from '@/components/PhoneSettings';
 import { MemberAvatar } from '@/components/MemberAvatar';
-import { getActivities, addActivity, deleteActivity, getReactions, getAllMemberProfiles, getDisplayAvatar, getMemberLastActive, isRecentlyActive, type Activity, type ActivityType, type Reaction, type MemberProfile } from '@/lib/activities';
+import { FamilySettings } from '@/components/FamilySettings';
+import { AvatarEditor } from '@/components/AvatarEditor';
+import { getActivities, addActivity, deleteActivity, getMemberLastActive, isRecentlyActive, type Activity, type ActivityType } from '@/lib/activities';
+import { getReactions, type Reaction } from '@/lib/reactions';
+import { getFamilyProfiles, getDisplayAvatar, type Profile } from '@/lib/profiles';
+import { getMyFamily, type Family } from '@/lib/families';
 import { useActivityNotifications } from '@/hooks/useActivityNotifications';
 import { usePushSubscription } from '@/hooks/usePushSubscription';
 import { NotificationBell } from '@/components/NotificationBell';
-import { LogOut, Users } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
+import { Users, Pencil } from 'lucide-react';
 import { PullToRefresh } from '@/components/PullToRefresh';
-import { Button } from '@/components/ui/button';
 import { MemberFilterChips } from '@/components/MemberFilterChips';
 import { haptic } from '@/lib/haptics';
 import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export default function Index() {
+  const { user, profile, refreshProfile } = useAuth();
+  const currentUserId = user!.id;
+  const displayName = profile?.display_name ?? '';
+
   const [activities, setActivities] = useState<Activity[]>([]);
   const [reactions, setReactions] = useState<Record<string, Reaction[]>>({});
   const [loading, setLoading] = useState(true);
-  const [currentUser, setCurrentUser] = useState<string | null>(() => localStorage.getItem('chau_family_user'));
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
-  const [selectedMember, setSelectedMember] = useState<string | null>(null);
-  const [profiles, setProfiles] = useState<Record<string, MemberProfile>>({});
+  const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
+  const [profiles, setProfiles] = useState<Record<string, Profile>>({});
+  const [family, setFamily] = useState<Family | null>(null);
   const [lastActive, setLastActive] = useState<Record<string, string>>({});
+  const [editingAvatar, setEditingAvatar] = useState(false);
 
-  useActivityNotifications(currentUser);
-  const pushSubscription = usePushSubscription(currentUser);
+  useActivityNotifications(currentUserId);
+  const pushSubscription = usePushSubscription(currentUserId, displayName);
 
   const fetchProfiles = useCallback(async () => {
     try {
-      const p = await getAllMemberProfiles();
+      const p = await getFamilyProfiles();
       setProfiles(p);
     } catch { /* non-critical */ }
   }, []);
 
   const fetchReactions = useCallback(async (acts: Activity[]) => {
     try {
-      const ids = acts.map(a => a.id);
+      const ids = acts.map((a) => a.id);
       const r = await getReactions(ids);
       setReactions(r);
     } catch { /* non-critical */ }
@@ -72,24 +80,13 @@ export default function Index() {
   }, [fetchReactions, fetchProfiles]);
 
   useEffect(() => {
-    if (currentUser) {
-      fetchActivities();
-      fetchProfiles();
-      getMemberLastActive().then(setLastActive).catch(() => {});
-    }
-  }, [currentUser, fetchActivities, fetchProfiles]);
+    fetchActivities();
+    fetchProfiles();
+    getMyFamily().then(setFamily);
+    getMemberLastActive().then(setLastActive).catch(() => {});
+  }, [fetchActivities, fetchProfiles]);
 
-  const handleSelectUser = (name: string) => {
-    localStorage.setItem('chau_family_user', name);
-    setCurrentUser(name);
-  };
-
-  const handleLogout = () => {
-    localStorage.removeItem('chau_family_user');
-    setCurrentUser(null);
-  };
-
-  const handleAdd = useCallback(async (data: { member_name: string; type: ActivityType; description: string; activity_date?: string; time_start?: string; time_end?: string }) => {
+  const handleAdd = useCallback(async (data: { type: ActivityType; description: string; activity_date?: string; time_start?: string; time_end?: string; image_url?: string; member_name: string }) => {
     try {
       const newActivity = await addActivity(data);
       setActivities((prev) => [newActivity, ...prev]);
@@ -109,22 +106,17 @@ export default function Index() {
     }
   }, []);
 
-  if (!currentUser) {
-    return <NamePicker onSelect={handleSelectUser} />;
-  }
-
-  const avatar = getDisplayAvatar(currentUser, profiles);
-  const userIsActive = isRecentlyActive(lastActive[currentUser]);
+  const avatar = getDisplayAvatar(currentUserId, profiles);
+  const userIsActive = isRecentlyActive(lastActive[currentUserId]);
 
   const filteredActivities = activities.filter((a) => {
     if (selectedDate && !(a.activity_date && isSameDay(new Date(a.activity_date + 'T00:00:00'), selectedDate))) return false;
-    if (selectedMember && a.member_name !== selectedMember) return false;
+    if (selectedUserId && a.user_id !== selectedUserId) return false;
     return true;
   });
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
       <motion.header
         className="sticky top-0 z-10 bg-card/80 backdrop-blur-xl border-b border-border"
         initial={{ y: -60 }}
@@ -136,131 +128,128 @@ export default function Index() {
             <Users className="w-5 h-5 text-primary-foreground" />
           </div>
           <div className="flex-1 min-w-0">
-            <h1 className="text-lg font-bold text-foreground leading-tight tracking-tight">Chau Family</h1>
+            <h1 className="text-lg font-bold text-foreground leading-tight tracking-tight truncate">{family?.name ?? 'Family'}</h1>
             <p className="text-[11px] text-muted-foreground">Family activity board</p>
           </div>
           <div className="flex items-center gap-1.5">
-            <MemberAvatar emoji={avatar.emoji} color={avatar.color} avatarUrl={avatar.avatarUrl} size="sm" isActive={userIsActive} />
-            <span className="text-xs font-semibold text-foreground hidden sm:inline">{currentUser}</span>
-            <PhoneSettings currentUser={currentUser} />
+            <button onClick={() => setEditingAvatar(true)} className="relative" title="Edit avatar">
+              <MemberAvatar emoji={avatar.emoji} color={avatar.color} avatarUrl={avatar.avatarUrl} size="sm" isActive={userIsActive} />
+              <span className="absolute -bottom-1 -right-1 w-3.5 h-3.5 rounded-full bg-primary text-primary-foreground flex items-center justify-center">
+                <Pencil className="w-2 h-2" />
+              </span>
+            </button>
             <NotificationBell
-              currentUser={currentUser}
+              currentUserId={currentUserId}
               pushSubscribed={pushSubscription.subscribed}
               onEnablePush={pushSubscription.subscribe}
+              profiles={profiles}
             />
-            <Button variant="ghost" size="icon" className="rounded-lg h-8 w-8 text-muted-foreground hover:text-foreground" onClick={handleLogout}>
-              <LogOut className="w-4 h-4" />
-            </Button>
+            <FamilySettings />
           </div>
         </div>
       </motion.header>
 
-      {/* Main */}
       <PullToRefresh onRefresh={handleRefresh}>
-      <motion.main
-        className="max-w-xl mx-auto px-4 py-5 space-y-4"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.15, duration: 0.4 }}
-      >
-        <AddActivityForm onAdd={handleAdd} currentUser={currentUser} profiles={profiles} />
+        <motion.main
+          className="max-w-xl mx-auto px-4 py-5 space-y-4"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.15, duration: 0.4 }}
+        >
+          <AddActivityForm onAdd={handleAdd} currentUserId={currentUserId} profiles={profiles} />
 
-        <MemberFilterChips
-          profiles={profiles}
-          selectedMember={selectedMember}
-          onSelect={setSelectedMember}
-          lastActive={lastActive}
-          isRecentlyActive={isRecentlyActive}
-        />
+          <MemberFilterChips
+            profiles={profiles}
+            selectedUserId={selectedUserId}
+            onSelect={setSelectedUserId}
+            lastActive={lastActive}
+            isRecentlyActive={isRecentlyActive}
+          />
 
-        {!loading && (
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2, duration: 0.35 }}
-          >
-            <ActivityCalendar activities={activities} selectedDate={selectedDate} onSelectDate={setSelectedDate} />
-          </motion.div>
-        )}
+          {!loading && (
+            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2, duration: 0.35 }}>
+              <ActivityCalendar activities={activities} selectedDate={selectedDate} onSelectDate={setSelectedDate} />
+            </motion.div>
+          )}
 
-        {!loading && filteredActivities.length > 0 && (
-          <div className="flex items-center gap-3 pt-1">
-            <div className="h-px flex-1 bg-border" />
-            <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-widest">
-              {filteredActivities.length} {filteredActivities.length === 1 ? 'Activity' : 'Activities'}
-            </span>
-            <div className="h-px flex-1 bg-border" />
-          </div>
-        )}
-
-        {loading ? (
-          <ActivityFeedSkeleton count={4} />
-        ) : filteredActivities.length === 0 ? (
-          <motion.div
-            className="text-center py-20"
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.3 }}
-          >
-            <div className="w-16 h-16 rounded-2xl bg-muted flex items-center justify-center mx-auto mb-3">
-              <span className="text-3xl">📅</span>
+          {!loading && filteredActivities.length > 0 && (
+            <div className="flex items-center gap-3 pt-1">
+              <div className="h-px flex-1 bg-border" />
+              <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-widest">
+                {filteredActivities.length} {filteredActivities.length === 1 ? 'Activity' : 'Activities'}
+              </span>
+              <div className="h-px flex-1 bg-border" />
             </div>
-            <p className="text-foreground font-semibold text-base">
-              {selectedDate ? 'No activities on this day' : 'No activities yet'}
-            </p>
-            <p className="text-sm text-muted-foreground mt-1 max-w-[240px] mx-auto">
-              {selectedDate ? 'Try selecting a different date or post a new activity.' : 'Post what you\'re up to so the family knows!'}
-            </p>
-          </motion.div>
-        ) : (
-          <div className="space-y-3">
-            <AnimatePresence mode="popLayout">
-              {filteredActivities.map((activity, idx) => {
-                const actDate = activity.activity_date
-                  ? new Date(activity.activity_date + 'T00:00:00')
-                  : new Date(activity.created_at);
-                const monthKey = format(actDate, 'yyyy-MM');
-                const prevActivity = filteredActivities[idx - 1];
-                const prevDate = prevActivity
-                  ? (prevActivity.activity_date
-                      ? new Date(prevActivity.activity_date + 'T00:00:00')
-                      : new Date(prevActivity.created_at))
-                  : null;
-                const prevMonthKey = prevDate ? format(prevDate, 'yyyy-MM') : null;
-                const showMonthHeader = monthKey !== prevMonthKey;
+          )}
 
-                return (
-                  <div key={activity.id}>
-                    {showMonthHeader && (
-                      <motion.div
-                        initial={{ opacity: 0, y: -4 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        className="flex items-center gap-3 py-2"
-                      >
-                        <div className="h-px flex-1 bg-border" />
-                        <span className="text-xs font-semibold text-primary tracking-wide">
-                          📅 {format(actDate, 'MMMM yyyy')}
-                        </span>
-                        <div className="h-px flex-1 bg-border" />
-                      </motion.div>
-                    )}
-                    <ActivityCard
-                      activity={activity}
-                      onDelete={handleDelete}
-                      currentUser={currentUser}
-                      reactions={reactions[activity.id] ?? []}
-                      onReactionChange={() => fetchReactions(activities)}
-                      profiles={profiles}
-                      isActive={isRecentlyActive(lastActive[activity.member_name])}
-                    />
-                  </div>
-                );
-              })}
-            </AnimatePresence>
-          </div>
-        )}
-      </motion.main>
+          {loading ? (
+            <ActivityFeedSkeleton count={4} />
+          ) : filteredActivities.length === 0 ? (
+            <motion.div className="text-center py-20" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.3 }}>
+              <div className="w-16 h-16 rounded-2xl bg-muted flex items-center justify-center mx-auto mb-3">
+                <span className="text-3xl">📅</span>
+              </div>
+              <p className="text-foreground font-semibold text-base">
+                {selectedDate ? 'No activities on this day' : 'No activities yet'}
+              </p>
+              <p className="text-sm text-muted-foreground mt-1 max-w-[240px] mx-auto">
+                {selectedDate ? 'Try selecting a different date or post a new activity.' : 'Post what you\'re up to so the family knows!'}
+              </p>
+            </motion.div>
+          ) : (
+            <div className="space-y-3">
+              <AnimatePresence mode="popLayout">
+                {filteredActivities.map((activity, idx) => {
+                  const actDate = activity.activity_date
+                    ? new Date(activity.activity_date + 'T00:00:00')
+                    : new Date(activity.created_at);
+                  const monthKey = format(actDate, 'yyyy-MM');
+                  const prevActivity = filteredActivities[idx - 1];
+                  const prevDate = prevActivity
+                    ? (prevActivity.activity_date
+                        ? new Date(prevActivity.activity_date + 'T00:00:00')
+                        : new Date(prevActivity.created_at))
+                    : null;
+                  const prevMonthKey = prevDate ? format(prevDate, 'yyyy-MM') : null;
+                  const showMonthHeader = monthKey !== prevMonthKey;
+
+                  return (
+                    <div key={activity.id}>
+                      {showMonthHeader && (
+                        <motion.div initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} className="flex items-center gap-3 py-2">
+                          <div className="h-px flex-1 bg-border" />
+                          <span className="text-xs font-semibold text-primary tracking-wide">📅 {format(actDate, 'MMMM yyyy')}</span>
+                          <div className="h-px flex-1 bg-border" />
+                        </motion.div>
+                      )}
+                      <ActivityCard
+                        activity={activity}
+                        onDelete={handleDelete}
+                        currentUserId={currentUserId}
+                        reactions={reactions[activity.id] ?? []}
+                        onReactionChange={() => fetchReactions(activities)}
+                        profiles={profiles}
+                        isActive={isRecentlyActive(lastActive[activity.user_id ?? ''])}
+                      />
+                    </div>
+                  );
+                })}
+              </AnimatePresence>
+            </div>
+          )}
+        </motion.main>
       </PullToRefresh>
+
+      {editingAvatar && (
+        <AvatarEditor
+          open
+          onClose={() => setEditingAvatar(false)}
+          currentEmoji={avatar.emoji}
+          currentColor={avatar.color}
+          currentAvatarUrl={avatar.avatarUrl}
+          onSaved={() => { fetchProfiles(); refreshProfile(); }}
+        />
+      )}
     </div>
   );
 }
