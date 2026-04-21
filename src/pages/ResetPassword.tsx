@@ -15,14 +15,16 @@ export default function ResetPassword() {
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
-    // Supabase auto-handles the recovery token in the URL hash and fires a PASSWORD_RECOVERY event.
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
-      if (event === 'PASSWORD_RECOVERY' || event === 'SIGNED_IN') setReady(true);
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'PASSWORD_RECOVERY' || (event === 'SIGNED_IN' && session)) setReady(true);
     });
+    // Fallback: if a session already exists (recovery token was exchanged), enable the form
     supabase.auth.getSession().then(({ data }) => {
       if (data.session) setReady(true);
     });
-    return () => subscription.unsubscribe();
+    // Last-resort fallback so users aren't stuck if events were missed
+    const t = setTimeout(() => setReady(true), 1500);
+    return () => { subscription.unsubscribe(); clearTimeout(t); };
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
