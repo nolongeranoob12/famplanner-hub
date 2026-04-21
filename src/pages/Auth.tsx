@@ -17,6 +17,26 @@ export default function Auth() {
   const [password, setPassword] = useState('');
   const [displayName, setDisplayName] = useState('');
   const [busy, setBusy] = useState(false);
+  const [forgotMode, setForgotMode] = useState(false);
+
+  const handleForgot = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email.trim()) {
+      toast.error('Enter your email first');
+      return;
+    }
+    setBusy(true);
+    const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
+      redirectTo: `${window.location.origin}/reset-password`,
+    });
+    setBusy(false);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    toast.success('Check your email for a reset link');
+    setForgotMode(false);
+  };
 
   useEffect(() => {
     if (!loading && user) navigate('/', { replace: true });
@@ -87,13 +107,29 @@ export default function Auth() {
           </TabsList>
 
           <TabsContent value="signin" className="mt-5">
-            <form onSubmit={handleSignIn} className="space-y-3">
-              <Input type="email" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} required className="rounded-xl h-11" />
-              <Input type="password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} required className="rounded-xl h-11" />
-              <Button type="submit" disabled={busy} className="w-full rounded-xl h-11 font-semibold">
-                {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Sign in'}
-              </Button>
-            </form>
+            {forgotMode ? (
+              <form onSubmit={handleForgot} className="space-y-3">
+                <p className="text-sm text-muted-foreground">Enter your email and we'll send you a reset link.</p>
+                <Input type="email" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} required className="rounded-xl h-11" />
+                <Button type="submit" disabled={busy} className="w-full rounded-xl h-11 font-semibold">
+                  {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Send reset link'}
+                </Button>
+                <button type="button" onClick={() => setForgotMode(false)} className="w-full text-xs text-muted-foreground hover:text-foreground pt-1">
+                  Back to sign in
+                </button>
+              </form>
+            ) : (
+              <form onSubmit={handleSignIn} className="space-y-3">
+                <Input type="email" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} required className="rounded-xl h-11" />
+                <Input type="password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} required className="rounded-xl h-11" />
+                <Button type="submit" disabled={busy} className="w-full rounded-xl h-11 font-semibold">
+                  {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Sign in'}
+                </Button>
+                <button type="button" onClick={() => setForgotMode(true)} className="w-full text-xs text-muted-foreground hover:text-foreground pt-1">
+                  Forgot password?
+                </button>
+              </form>
+            )}
           </TabsContent>
 
           <TabsContent value="signup" className="mt-5">
