@@ -7,24 +7,69 @@ import { KeyRound, Loader2 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { toast } from 'sonner';
 
+function getHashParams() {
+  const hash = window.location.hash.startsWith('#') ? window.location.hash.slice(1) : window.location.hash;
+  return new URLSearchParams(hash);
+}
+
 export default function ResetPassword() {
   const navigate = useNavigate();
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
   const [busy, setBusy] = useState(false);
   const [ready, setReady] = useState(false);
+  const [checkingSession, setCheckingSession] = useState(true);
 
   useEffect(() => {
+    let mounted = true;
+
+    const bootstrapRecoverySession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        if (mounted) {
+          setReady(true);
+          setCheckingSession(false);
+        }
+        return;
+      }
+
+      const hashParams = getHashParams();
+      const accessToken = hashParams.get('access_token');
+      const refreshToken = hashParams.get('refresh_token');
+      const type = hashParams.get('type');
+
+      if (type === 'recovery' && accessToken && refreshToken) {
+        const { error } = await supabase.auth.setSession({
+          access_token: accessToken,
+          refresh_token: refreshToken,
+        });
+
+        if (!mounted) return;
+
+        if (!error) {
+          setReady(true);
+        } else {
+          toast.error('This reset link is invalid or has expired. Please request a new one.');
+        }
+      }
+
+      if (mounted) setCheckingSession(false);
+    };
+
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event === 'PASSWORD_RECOVERY' || (event === 'SIGNED_IN' && session)) setReady(true);
+      if (!mounted) return;
+      if (event === 'PASSWORD_RECOVERY' || event === 'TOKEN_REFRESHED' || !!session) {
+        setReady(true);
+        setCheckingSession(false);
+      }
     });
-    // Fallback: if a session already exists (recovery token was exchanged), enable the form
-    supabase.auth.getSession().then(({ data }) => {
-      if (data.session) setReady(true);
-    });
-    // Last-resort fallback so users aren't stuck if events were missed
-    const t = setTimeout(() => setReady(true), 1500);
-    return () => { subscription.unsubscribe(); clearTimeout(t); };
+
+    void bootstrapRecoverySession();
+
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -37,13 +82,22 @@ export default function ResetPassword() {
       toast.error('Passwords do not match');
       return;
     }
+
     setBusy(true);
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      setBusy(false);
+      toast.error('This reset link is invalid or expired. Please request a new one.');
+      return;
+    }
+
     const { error } = await supabase.auth.updateUser({ password });
     setBusy(false);
     if (error) {
       toast.error(error.message);
       return;
     }
+
     toast.success('Password updated! You are signed in.');
     navigate('/', { replace: true });
   };
@@ -64,9 +118,11 @@ export default function ResetPassword() {
           <p className="text-sm text-muted-foreground mt-1.5">Choose a password you'll remember this time.</p>
         </div>
 
-        {!ready ? (
+        {checkingSession ? (
+          <p className="text-center text-sm text-muted-foreground">Checking your reset link…</p>
+        ) : !ready ? (
           <p className="text-center text-sm text-muted-foreground">
-            Open this page from the reset link in your email.
+            This reset link is invalid or expired. Request a new one from the sign-in screen.
           </p>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-3">
@@ -81,3 +137,4 @@ export default function ResetPassword() {
     </div>
   );
 }
+
