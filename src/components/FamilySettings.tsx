@@ -23,6 +23,12 @@ export function FamilySettings() {
   const [displayName, setDisplayName] = useState(profile?.display_name ?? '');
   const [phone, setPhone] = useState(profile?.phone ?? '');
   const [busy, setBusy] = useState(false);
+  const [members, setMembers] = useState<Profile[]>([]);
+
+  const loadMembers = async () => {
+    const map = await getFamilyProfiles();
+    setMembers(Object.values(map).sort((a, b) => a.display_name.localeCompare(b.display_name)));
+  };
 
   useEffect(() => {
     if (!open) return;
@@ -30,10 +36,24 @@ export function FamilySettings() {
       setFamily(f);
       setFamilyName(f?.name ?? '');
       if (f && user) isFamilyOwner(f.id, user.id).then(setIsOwner);
+      if (f) loadMembers();
     });
     setDisplayName(profile?.display_name ?? '');
     setPhone(profile?.phone ?? '');
   }, [open, user, profile]);
+
+  const handleRemoveMember = async (memberId: string, name: string) => {
+    setBusy(true);
+    try {
+      await removeFamilyMember(memberId);
+      toast.success(`${name} removed from family`);
+      await loadMembers();
+    } catch (err) {
+      toast.error((err as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  };
 
   const handleCopy = () => {
     if (!family) return;
