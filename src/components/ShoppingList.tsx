@@ -49,14 +49,25 @@ export function ShoppingList({ currentUserId, profiles }: ShoppingListProps) {
     load();
   }, [open, load]);
 
-  // Realtime sync
   useEffect(() => {
+    let pulseTimer: ReturnType<typeof setTimeout> | null = null;
+    const triggerPulse = () => {
+      setSyncPulse(true);
+      if (pulseTimer) clearTimeout(pulseTimer);
+      pulseTimer = setTimeout(() => setSyncPulse(false), 1100);
+    };
     const channel = supabase
       .channel('shopping-items-sync')
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'shopping_items' },
         (payload) => {
+          // Pulse the cart only for changes coming from OTHER users
+          const fromOther =
+            (payload.new as ShoppingItem | null)?.user_id !== currentUserId &&
+            (payload.old as ShoppingItem | null)?.user_id !== currentUserId;
+          if (fromOther) triggerPulse();
+
           setItems((prev) => {
             if (payload.eventType === 'INSERT') {
               const next = payload.new as ShoppingItem;
@@ -77,9 +88,10 @@ export function ShoppingList({ currentUserId, profiles }: ShoppingListProps) {
       )
       .subscribe();
     return () => {
+      if (pulseTimer) clearTimeout(pulseTimer);
       supabase.removeChannel(channel);
     };
-  }, []);
+  }, [currentUserId]);
 
   const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault();
