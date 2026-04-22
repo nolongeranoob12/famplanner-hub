@@ -78,8 +78,17 @@ export function ActivityCard({ activity, onDelete, currentUserId, reactions = []
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, x: -40, transition: { duration: 0.2 } }}
       transition={{ duration: 0.3, ease: 'easeOut' }}
-      className="bg-card rounded-xl border border-border hover:border-border/80 hover:shadow-md transition-shadow duration-200 overflow-hidden group"
+      className={cn(
+        'bg-card rounded-xl border hover:shadow-md transition-shadow duration-200 overflow-hidden group',
+        isPinned ? 'border-primary/50 ring-1 ring-primary/20 shadow-sm' : 'border-border hover:border-border/80'
+      )}
     >
+      {isPinned && (
+        <div className="flex items-center gap-1.5 px-4 py-1.5 bg-primary/10 text-primary text-[11px] font-semibold border-b border-primary/20">
+          <Pin className="w-3 h-3 fill-current" />
+          <span>Pinned</span>
+        </div>
+      )}
       {activity.image_url && (
         <button type="button" onClick={() => setImageExpanded(!imageExpanded)} className="w-full overflow-hidden">
           <img src={activity.image_url} alt="Activity photo" className={`w-full object-cover transition-all duration-300 ${imageExpanded ? 'max-h-96' : 'max-h-48'}`} loading="lazy" />
