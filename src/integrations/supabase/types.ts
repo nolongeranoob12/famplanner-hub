@@ -340,6 +340,45 @@ export type Database = {
           },
         ]
       }
+      shopping_items: {
+        Row: {
+          created_at: string
+          done_at: string | null
+          done_by: string | null
+          family_id: string | null
+          id: string
+          is_done: boolean
+          name: string
+          quantity: string | null
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          done_at?: string | null
+          done_by?: string | null
+          family_id?: string | null
+          id?: string
+          is_done?: boolean
+          name: string
+          quantity?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          done_at?: string | null
+          done_by?: string | null
+          family_id?: string | null
+          id?: string
+          is_done?: boolean
+          name?: string
+          quantity?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
