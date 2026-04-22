@@ -15,6 +15,15 @@ export interface Activity {
   time_end: string | null;
   created_at: string;
   updated_at: string;
+  pinned_at: string | null;
+}
+
+export async function setActivityPinned(id: string, pinned: boolean) {
+  const { error } = await supabase
+    .from('activities')
+    .update({ pinned_at: pinned ? new Date().toISOString() : null } as any)
+    .eq('id', id);
+  if (error) throw error;
 }
 
 export const activityConfig: Record<ActivityType, { emoji: string; label: string; bgClass: string; textClass: string }> = {

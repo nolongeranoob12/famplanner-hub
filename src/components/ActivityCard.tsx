@@ -1,14 +1,15 @@
 import { useState } from 'react';
-import { activityConfig, type Activity } from '@/lib/activities';
+import { activityConfig, type Activity, setActivityPinned } from '@/lib/activities';
 import { reactionEmojis, toggleReaction, type Reaction } from '@/lib/reactions';
 import { getDisplayAvatar, type Profile } from '@/lib/profiles';
 import { haptic } from '@/lib/haptics';
 import { MemberAvatar } from '@/components/MemberAvatar';
-import { Trash2, CalendarDays, Clock, Phone, MessageCircle } from 'lucide-react';
+import { Trash2, CalendarDays, Clock, Phone, MessageCircle, Pin, PinOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { formatDistanceToNow, format } from 'date-fns';
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
+import { toast } from 'sonner';
 
 interface ActivityCardProps {
   activity: Activity;
@@ -33,6 +34,23 @@ export function ActivityCard({ activity, onDelete, currentUserId, reactions = []
   const phone = authorProfile?.phone ?? '';
   const [imageExpanded, setImageExpanded] = useState(false);
   const [reacting, setReacting] = useState(false);
+  const [pinning, setPinning] = useState(false);
+  const isPinned = !!activity.pinned_at;
+
+  const handleTogglePin = async () => {
+    if (pinning) return;
+    haptic('medium');
+    setPinning(true);
+    try {
+      await setActivityPinned(activity.id, !isPinned);
+      onReactionChange?.();
+      toast.success(isPinned ? 'Unpinned' : 'Pinned to top');
+    } catch {
+      toast.error('Failed to update pin');
+    } finally {
+      setPinning(false);
+    }
+  };
 
   const handleReaction = async (emoji: string) => {
     if (reacting) return;
@@ -60,8 +78,17 @@ export function ActivityCard({ activity, onDelete, currentUserId, reactions = []
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, x: -40, transition: { duration: 0.2 } }}
       transition={{ duration: 0.3, ease: 'easeOut' }}
-      className="bg-card rounded-xl border border-border hover:border-border/80 hover:shadow-md transition-shadow duration-200 overflow-hidden group"
+      className={cn(
+        'bg-card rounded-xl border hover:shadow-md transition-shadow duration-200 overflow-hidden group',
+        isPinned ? 'border-primary/50 ring-1 ring-primary/20 shadow-sm' : 'border-border hover:border-border/80'
+      )}
     >
+      {isPinned && (
+        <div className="flex items-center gap-1.5 px-4 py-1.5 bg-primary/10 text-primary text-[11px] font-semibold border-b border-primary/20">
+          <Pin className="w-3 h-3 fill-current" />
+          <span>Pinned</span>
+        </div>
+      )}
       {activity.image_url && (
         <button type="button" onClick={() => setImageExpanded(!imageExpanded)} className="w-full overflow-hidden">
           <img src={activity.image_url} alt="Activity photo" className={`w-full object-cover transition-all duration-300 ${imageExpanded ? 'max-h-96' : 'max-h-48'}`} loading="lazy" />
@@ -135,11 +162,26 @@ export function ActivityCard({ activity, onDelete, currentUserId, reactions = []
             </div>
           </div>
 
-          {isOwner && (
-            <Button variant="ghost" size="icon" className="shrink-0 text-muted-foreground hover:text-destructive rounded-lg h-8 w-8" onClick={() => onDelete(activity.id)}>
-              <Trash2 className="w-4 h-4" />
+          <div className="flex flex-col gap-1 shrink-0">
+            <Button
+              variant="ghost"
+              size="icon"
+              disabled={pinning}
+              className={cn(
+                'rounded-lg h-8 w-8',
+                isPinned ? 'text-primary hover:text-primary/80' : 'text-muted-foreground hover:text-primary'
+              )}
+              onClick={handleTogglePin}
+              title={isPinned ? 'Unpin' : 'Pin to top'}
+            >
+              {isPinned ? <PinOff className="w-4 h-4" /> : <Pin className="w-4 h-4" />}
             </Button>
-          )}
+            {isOwner && (
+              <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-destructive rounded-lg h-8 w-8" onClick={() => onDelete(activity.id)}>
+                <Trash2 className="w-4 h-4" />
+              </Button>
+            )}
+          </div>
         </div>
       </div>
     </motion.div>

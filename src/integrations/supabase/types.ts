@@ -23,6 +23,7 @@ export type Database = {
           id: string
           image_url: string | null
           member_name: string
+          pinned_at: string | null
           time_end: string | null
           time_start: string | null
           type: string
@@ -37,6 +38,7 @@ export type Database = {
           id?: string
           image_url?: string | null
           member_name: string
+          pinned_at?: string | null
           time_end?: string | null
           time_start?: string | null
           type: string
@@ -51,6 +53,7 @@ export type Database = {
           id?: string
           image_url?: string | null
           member_name?: string
+          pinned_at?: string | null
           time_end?: string | null
           time_start?: string | null
           type?: string

@@ -109,11 +109,17 @@ export default function Index() {
   const avatar = getDisplayAvatar(currentUserId, profiles);
   const userIsActive = isRecentlyActive(lastActive[currentUserId]);
 
-  const filteredActivities = activities.filter((a) => {
-    if (selectedDate && !(a.activity_date && isSameDay(new Date(a.activity_date + 'T00:00:00'), selectedDate))) return false;
-    if (selectedUserId && a.user_id !== selectedUserId) return false;
-    return true;
-  });
+  const filteredActivities = activities
+    .filter((a) => {
+      if (selectedDate && !(a.activity_date && isSameDay(new Date(a.activity_date + 'T00:00:00'), selectedDate))) return false;
+      if (selectedUserId && a.user_id !== selectedUserId) return false;
+      return true;
+    })
+    .sort((a, b) => {
+      if (!!a.pinned_at !== !!b.pinned_at) return a.pinned_at ? -1 : 1;
+      if (a.pinned_at && b.pinned_at) return new Date(b.pinned_at).getTime() - new Date(a.pinned_at).getTime();
+      return 0;
+    });
 
   return (
     <div className="min-h-screen bg-background">
@@ -227,7 +233,7 @@ export default function Index() {
                         onDelete={handleDelete}
                         currentUserId={currentUserId}
                         reactions={reactions[activity.id] ?? []}
-                        onReactionChange={() => fetchReactions(activities)}
+                        onReactionChange={() => { fetchReactions(activities); fetchActivities(); }}
                         profiles={profiles}
                         isActive={isRecentlyActive(lastActive[activity.user_id ?? ''])}
                       />
