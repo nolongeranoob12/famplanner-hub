@@ -3,11 +3,16 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/co
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Settings, Copy, RefreshCw, Loader2, LogOut } from 'lucide-react';
+import { Settings, Copy, RefreshCw, Loader2, LogOut, UserMinus } from 'lucide-react';
 import { toast } from 'sonner';
-import { type Family, getMyFamily, regenerateInviteCode, renameFamily, isFamilyOwner } from '@/lib/families';
-import { updateMyProfile, type Profile } from '@/lib/profiles';
+import { type Family, getMyFamily, regenerateInviteCode, renameFamily, isFamilyOwner, removeFamilyMember } from '@/lib/families';
+import { updateMyProfile, getFamilyProfiles, getDisplayAvatar, type Profile } from '@/lib/profiles';
 import { useAuth } from '@/contexts/AuthContext';
+import { MemberAvatar } from '@/components/MemberAvatar';
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 
 export function FamilySettings() {
   const { user, profile, refreshProfile, signOut } = useAuth();
@@ -18,6 +23,12 @@ export function FamilySettings() {
   const [displayName, setDisplayName] = useState(profile?.display_name ?? '');
   const [phone, setPhone] = useState(profile?.phone ?? '');
   const [busy, setBusy] = useState(false);
+  const [members, setMembers] = useState<Profile[]>([]);
+
+  const loadMembers = async () => {
+    const map = await getFamilyProfiles();
+    setMembers(Object.values(map).sort((a, b) => a.display_name.localeCompare(b.display_name)));
+  };
 
   useEffect(() => {
     if (!open) return;
@@ -25,10 +36,24 @@ export function FamilySettings() {
       setFamily(f);
       setFamilyName(f?.name ?? '');
       if (f && user) isFamilyOwner(f.id, user.id).then(setIsOwner);
+      if (f) loadMembers();
     });
     setDisplayName(profile?.display_name ?? '');
     setPhone(profile?.phone ?? '');
   }, [open, user, profile]);
+
+  const handleRemoveMember = async (memberId: string, name: string) => {
+    setBusy(true);
+    try {
+      await removeFamilyMember(memberId);
+      toast.success(`${name} removed from family`);
+      await loadMembers();
+    } catch (err) {
+      toast.error((err as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  };
 
   const handleCopy = () => {
     if (!family) return;
@@ -139,6 +164,57 @@ export function FamilySettings() {
                 </div>
                 <p className="text-[11px] text-muted-foreground">Share this code with family members so they can join.</p>
               </div>
+            </section>
+          )}
+
+          {family && members.length > 0 && (
+            <section className="space-y-3 pt-4 border-t">
+              <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                Members ({members.length})
+              </h3>
+              <ul className="space-y-1.5">
+                {members.map((m) => {
+                  const av = getDisplayAvatar(m.id, { [m.id]: m });
+                  const isMe = m.id === user?.id;
+                  return (
+                    <li key={m.id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted/50">
+                      <MemberAvatar emoji={av.emoji} color={av.color} avatarUrl={av.avatarUrl} size="sm" />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium truncate">
+                          {m.display_name || 'Unnamed'} {isMe && <span className="text-xs text-muted-foreground">(you)</span>}
+                        </p>
+                      </div>
+                      {isOwner && !isMe && (
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button size="icon" variant="ghost" className="h-8 w-8 text-muted-foreground hover:text-destructive" disabled={busy}>
+                              <UserMinus className="w-4 h-4" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Remove {m.display_name || 'member'}?</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                They will lose access to this family's activities, shopping list, and notifications. Their past posts will remain visible. They can rejoin later with a new invite code.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancel</AlertDialogCancel>
+                              <AlertDialogAction
+                                onClick={() => handleRemoveMember(m.id, m.display_name || 'Member')}
+                                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                              >
+                                Remove
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      )}
+                    </li>
+                  );
+                })}
+              </ul>
+              {isOwner && <p className="text-[11px] text-muted-foreground">As the owner, you can remove members from your family.</p>}
             </section>
           )}
 
