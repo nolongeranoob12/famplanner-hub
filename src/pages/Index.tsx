@@ -233,7 +233,7 @@ export default function Index() {
                         onDelete={handleDelete}
                         currentUserId={currentUserId}
                         reactions={reactions[activity.id] ?? []}
-                        onReactionChange={() => fetchReactions(activities)}
+                        onReactionChange={() => { fetchReactions(activities); fetchActivities(); }}
                         profiles={profiles}
                         isActive={isRecentlyActive(lastActive[activity.user_id ?? ''])}
                       />
