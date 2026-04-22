@@ -18,6 +18,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Users, Pencil } from 'lucide-react';
 import { PullToRefresh } from '@/components/PullToRefresh';
 import { MemberFilterChips } from '@/components/MemberFilterChips';
+import { ShoppingList } from '@/components/ShoppingList';
 import { haptic } from '@/lib/haptics';
 import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -144,6 +145,7 @@ export default function Index() {
                 <Pencil className="w-2 h-2" />
               </span>
             </button>
+            <ShoppingList currentUserId={currentUserId} profiles={profiles} />
             <NotificationBell
               currentUserId={currentUserId}
               pushSubscribed={pushSubscription.subscribed}
