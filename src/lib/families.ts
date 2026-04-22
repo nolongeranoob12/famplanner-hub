@@ -41,6 +41,11 @@ export async function renameFamily(familyId: string, name: string): Promise<void
   if (error) throw error;
 }
 
+export async function removeFamilyMember(userId: string): Promise<void> {
+  const { error } = await supabase.rpc('remove_family_member' as any, { _user_id: userId });
+  if (error) throw error;
+}
+
 export async function isFamilyOwner(familyId: string, userId: string): Promise<boolean> {
   const { data } = await supabase
     .from('user_roles' as any)
