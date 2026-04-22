@@ -428,6 +428,7 @@ export type Database = {
       }
       join_family_by_code: { Args: { _code: string }; Returns: string }
       regenerate_invite_code: { Args: { _family_id: string }; Returns: string }
+      remove_family_member: { Args: { _user_id: string }; Returns: undefined }
     }
     Enums: {
       app_role: "owner" | "member"
