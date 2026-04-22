@@ -167,6 +167,57 @@ export function FamilySettings() {
             </section>
           )}
 
+          {family && members.length > 0 && (
+            <section className="space-y-3 pt-4 border-t">
+              <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                Members ({members.length})
+              </h3>
+              <ul className="space-y-1.5">
+                {members.map((m) => {
+                  const av = getDisplayAvatar(m.id, { [m.id]: m });
+                  const isMe = m.id === user?.id;
+                  return (
+                    <li key={m.id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted/50">
+                      <MemberAvatar emoji={av.emoji} color={av.color} avatarUrl={av.avatarUrl} size="sm" />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium truncate">
+                          {m.display_name || 'Unnamed'} {isMe && <span className="text-xs text-muted-foreground">(you)</span>}
+                        </p>
+                      </div>
+                      {isOwner && !isMe && (
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button size="icon" variant="ghost" className="h-8 w-8 text-muted-foreground hover:text-destructive" disabled={busy}>
+                              <UserMinus className="w-4 h-4" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Remove {m.display_name || 'member'}?</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                They will lose access to this family's activities, shopping list, and notifications. Their past posts will remain visible. They can rejoin later with a new invite code.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancel</AlertDialogCancel>
+                              <AlertDialogAction
+                                onClick={() => handleRemoveMember(m.id, m.display_name || 'Member')}
+                                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                              >
+                                Remove
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      )}
+                    </li>
+                  );
+                })}
+              </ul>
+              {isOwner && <p className="text-[11px] text-muted-foreground">As the owner, you can remove members from your family.</p>}
+            </section>
+          )}
+
           <section className="pt-4 border-t">
             <Button variant="outline" onClick={() => { signOut(); setOpen(false); }} className="w-full rounded-lg text-destructive hover:text-destructive">
               <LogOut className="w-4 h-4 mr-2" /> Sign out
