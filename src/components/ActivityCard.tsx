@@ -34,6 +34,23 @@ export function ActivityCard({ activity, onDelete, currentUserId, reactions = []
   const phone = authorProfile?.phone ?? '';
   const [imageExpanded, setImageExpanded] = useState(false);
   const [reacting, setReacting] = useState(false);
+  const [pinning, setPinning] = useState(false);
+  const isPinned = !!activity.pinned_at;
+
+  const handleTogglePin = async () => {
+    if (pinning) return;
+    haptic('medium');
+    setPinning(true);
+    try {
+      await setActivityPinned(activity.id, !isPinned);
+      onReactionChange?.();
+      toast.success(isPinned ? 'Unpinned' : 'Pinned to top');
+    } catch {
+      toast.error('Failed to update pin');
+    } finally {
+      setPinning(false);
+    }
+  };
 
   const handleReaction = async (emoji: string) => {
     if (reacting) return;
