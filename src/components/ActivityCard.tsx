@@ -1,14 +1,15 @@
 import { useState } from 'react';
-import { activityConfig, type Activity } from '@/lib/activities';
+import { activityConfig, type Activity, setActivityPinned } from '@/lib/activities';
 import { reactionEmojis, toggleReaction, type Reaction } from '@/lib/reactions';
 import { getDisplayAvatar, type Profile } from '@/lib/profiles';
 import { haptic } from '@/lib/haptics';
 import { MemberAvatar } from '@/components/MemberAvatar';
-import { Trash2, CalendarDays, Clock, Phone, MessageCircle } from 'lucide-react';
+import { Trash2, CalendarDays, Clock, Phone, MessageCircle, Pin, PinOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { formatDistanceToNow, format } from 'date-fns';
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
+import { toast } from 'sonner';
 
 interface ActivityCardProps {
   activity: Activity;
