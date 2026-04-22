@@ -162,11 +162,26 @@ export function ActivityCard({ activity, onDelete, currentUserId, reactions = []
             </div>
           </div>
 
-          {isOwner && (
-            <Button variant="ghost" size="icon" className="shrink-0 text-muted-foreground hover:text-destructive rounded-lg h-8 w-8" onClick={() => onDelete(activity.id)}>
-              <Trash2 className="w-4 h-4" />
+          <div className="flex flex-col gap-1 shrink-0">
+            <Button
+              variant="ghost"
+              size="icon"
+              disabled={pinning}
+              className={cn(
+                'rounded-lg h-8 w-8',
+                isPinned ? 'text-primary hover:text-primary/80' : 'text-muted-foreground hover:text-primary'
+              )}
+              onClick={handleTogglePin}
+              title={isPinned ? 'Unpin' : 'Pin to top'}
+            >
+              {isPinned ? <PinOff className="w-4 h-4" /> : <Pin className="w-4 h-4" />}
             </Button>
-          )}
+            {isOwner && (
+              <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-destructive rounded-lg h-8 w-8" onClick={() => onDelete(activity.id)}>
+                <Trash2 className="w-4 h-4" />
+              </Button>
+            )}
+          </div>
         </div>
       </div>
     </motion.div>
