@@ -158,12 +158,52 @@ export function ShoppingList({ currentUserId, profiles }: ShoppingListProps) {
           className="relative w-9 h-9 rounded-full flex items-center justify-center hover:bg-muted transition-colors"
           title="Shopping list"
         >
-          <ShoppingCart className="w-[18px] h-[18px] text-foreground" />
-          {pending.length > 0 && (
-            <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 rounded-full bg-primary text-primary-foreground text-[10px] font-bold flex items-center justify-center">
-              {pending.length}
-            </span>
-          )}
+          {/* Sync pulse ring — fires when another family member changes the list */}
+          <AnimatePresence>
+            {syncPulse && (
+              <>
+                <motion.span
+                  key="ring"
+                  className="absolute inset-0 rounded-full border-2 border-primary"
+                  initial={{ scale: 0.8, opacity: 0.7 }}
+                  animate={{ scale: 1.6, opacity: 0 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.9, ease: 'easeOut' }}
+                />
+                <motion.span
+                  key="ring2"
+                  className="absolute inset-0 rounded-full border-2 border-primary"
+                  initial={{ scale: 0.8, opacity: 0.5 }}
+                  animate={{ scale: 2.1, opacity: 0 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 1.05, ease: 'easeOut', delay: 0.15 }}
+                />
+              </>
+            )}
+          </AnimatePresence>
+
+          <motion.span
+            animate={syncPulse ? { rotate: [0, -12, 10, -6, 0], scale: [1, 1.12, 1] } : { rotate: 0, scale: 1 }}
+            transition={{ duration: 0.6, ease: 'easeInOut' }}
+            className="relative flex items-center justify-center"
+          >
+            <ShoppingCart className={`w-[18px] h-[18px] transition-colors ${syncPulse ? 'text-primary' : 'text-foreground'}`} />
+          </motion.span>
+
+          <AnimatePresence>
+            {pending.length > 0 && (
+              <motion.span
+                key={pending.length}
+                initial={{ scale: 0.4, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.4, opacity: 0 }}
+                transition={{ type: 'spring', stiffness: 500, damping: 22 }}
+                className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 rounded-full bg-primary text-primary-foreground text-[10px] font-bold flex items-center justify-center shadow-sm ring-2 ring-card"
+              >
+                {pending.length}
+              </motion.span>
+            )}
+          </AnimatePresence>
         </button>
       </SheetTrigger>
       <SheetContent side="right" className="w-full sm:max-w-md p-0 flex flex-col">
