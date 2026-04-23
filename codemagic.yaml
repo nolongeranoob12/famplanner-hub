@@ -18,15 +18,13 @@ workflows:
         script: npm install
       - name: Build web app
         script: npm run build
-      - name: Install Capacitor
+- name: Install Capacitor
         script: |
           npm install @capacitor/core @capacitor/cli @capacitor/ios
           npx cap init "Family Connect Hub" "com.nolongeranoob12.famplannerhub" --web-dir=dist
           npx cap add ios
           npx cap sync ios
-          ls -la
-          ls -la ios/ || echo "ios folder not found"
-          ls -la ios/App/ || echo "ios/App folder not found"
+          /usr/libexec/PlistBuddy -c "Set :CFBundleIdentifier com.nolongeranoob12.famplannerhub" ios/App/App/Info.plist
       - name: Install CocoaPods
         script: |
           cd ios/App
@@ -37,13 +35,7 @@ workflows:
           xcode-project use-profiles
           xcode-project build-ipa \
             --workspace ios/App/App.xcworkspace \
-            --scheme App \
-            --config Release \
-            CODE_SIGN_STYLE=Manual \
-            DEVELOPMENT_TEAM=53G9S6C954 \
-            PRODUCT_BUNDLE_IDENTIFIER=com.nolongeranoob12.famplannerhub \
-            PROVISIONING_PROFILE_SPECIFIER="FamPlanner AppStore Profile" \
-            CODE_SIGN_IDENTITY="Apple Distribution"
+            --scheme App
     artifacts:
       - build/ios/ipa/*.ipa
     publishing:
