@@ -14,7 +14,8 @@ import {
   clearCompletedItems,
   type ShoppingItem,
 } from '@/lib/shopping';
-import { type Profile } from '@/lib/profiles';
+import { getDisplayAvatar, type Profile } from '@/lib/profiles';
+import { MemberAvatar } from '@/components/MemberAvatar';
 import { haptic } from '@/lib/haptics';
 import { toast } from 'sonner';
 import { formatDistanceToNow } from 'date-fns';
