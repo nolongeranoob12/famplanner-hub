@@ -440,32 +440,41 @@ function ItemRow({
       >
         {item.is_done && <Check className="w-3.5 h-3.5 text-primary-foreground" strokeWidth={3} />}
       </button>
-      <div className="flex-1 min-w-0">
-        <div className="flex items-baseline gap-2">
+      <div className="flex-1 min-w-0 flex items-center gap-2.5">
+        <div className="flex-1 min-w-0">
           <span
-            className={`text-sm font-medium truncate transition-all ${
+            className={`block text-sm font-medium truncate transition-all ${
               item.is_done ? 'line-through text-muted-foreground' : 'text-foreground'
             }`}
           >
             {item.name}
           </span>
-          {item.quantity && (
+          {item.is_done && doneByName && item.done_at && (
+            <p className="text-[10px] text-muted-foreground mt-0.5 flex items-center gap-1">
+              <Check className="w-2.5 h-2.5" strokeWidth={3} />
+              {doneByName} · {formatDistanceToNow(new Date(item.done_at), { addSuffix: true })}
+            </p>
+          )}
+        </div>
+        {item.quantity && (
+          <div
+            className={`shrink-0 flex items-center gap-1 pl-2.5 border-l ${
+              item.is_done ? 'border-border/60' : 'border-border'
+            }`}
+          >
+            <span className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground/70">
+              Qty
+            </span>
             <span
-              className={`text-[11px] font-semibold shrink-0 px-1.5 py-0.5 rounded-md ${
+              className={`min-w-[26px] text-center text-xs font-bold px-2 py-0.5 rounded-md tabular-nums ${
                 item.is_done
                   ? 'bg-muted text-muted-foreground'
-                  : 'bg-primary/10 text-primary'
+                  : 'bg-primary text-primary-foreground shadow-sm shadow-primary/20'
               }`}
             >
               {item.quantity}
             </span>
-          )}
-        </div>
-        {item.is_done && doneByName && item.done_at && (
-          <p className="text-[10px] text-muted-foreground mt-0.5 flex items-center gap-1">
-            <Check className="w-2.5 h-2.5" strokeWidth={3} />
-            {doneByName} · {formatDistanceToNow(new Date(item.done_at), { addSuffix: true })}
-          </p>
+          </div>
         )}
       </div>
       <button
