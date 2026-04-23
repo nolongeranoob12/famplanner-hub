@@ -14,7 +14,8 @@ import {
   clearCompletedItems,
   type ShoppingItem,
 } from '@/lib/shopping';
-import { type Profile } from '@/lib/profiles';
+import { getDisplayAvatar, type Profile } from '@/lib/profiles';
+import { MemberAvatar } from '@/components/MemberAvatar';
 import { haptic } from '@/lib/haptics';
 import { toast } from 'sonner';
 import { formatDistanceToNow } from 'date-fns';
@@ -32,6 +33,7 @@ export function ShoppingList({ currentUserId, profiles }: ShoppingListProps) {
   const [loading, setLoading] = useState(false);
   const [adding, setAdding] = useState(false);
   const [syncPulse, setSyncPulse] = useState(false);
+  const [floatingEditor, setFloatingEditor] = useState<{ id: number; userId: string } | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -51,10 +53,16 @@ export function ShoppingList({ currentUserId, profiles }: ShoppingListProps) {
 
   useEffect(() => {
     let pulseTimer: ReturnType<typeof setTimeout> | null = null;
-    const triggerPulse = () => {
+    let floatTimer: ReturnType<typeof setTimeout> | null = null;
+    const triggerPulse = (editorId?: string | null) => {
       setSyncPulse(true);
       if (pulseTimer) clearTimeout(pulseTimer);
-      pulseTimer = setTimeout(() => setSyncPulse(false), 1100);
+      pulseTimer = setTimeout(() => setSyncPulse(false), 1400);
+      if (editorId) {
+        setFloatingEditor({ id: Date.now(), userId: editorId });
+        if (floatTimer) clearTimeout(floatTimer);
+        floatTimer = setTimeout(() => setFloatingEditor(null), 2200);
+      }
     };
     const channel = supabase
       .channel('shopping-items-sync')
@@ -62,11 +70,31 @@ export function ShoppingList({ currentUserId, profiles }: ShoppingListProps) {
         'postgres_changes',
         { event: '*', schema: 'public', table: 'shopping_items' },
         (payload) => {
-          // Pulse the cart only for changes coming from OTHER users
-          const fromOther =
-            (payload.new as ShoppingItem | null)?.user_id !== currentUserId &&
-            (payload.old as ShoppingItem | null)?.user_id !== currentUserId;
-          if (fromOther) triggerPulse();
+          const newRow = payload.new as ShoppingItem | null;
+          const oldRow = payload.old as ShoppingItem | null;
+          // Identify the editor: for toggle updates use done_by, otherwise the row's user_id
+          const editorId =
+            (payload.eventType === 'UPDATE' && newRow?.done_by) ||
+            newRow?.user_id ||
+            oldRow?.user_id ||
+            null;
+          const fromOther = editorId && editorId !== currentUserId;
+
+          if (fromOther) {
+            triggerPulse(editorId);
+            const editorName = profiles[editorId]?.display_name?.split(' ')[0] || 'Someone';
+            if (payload.eventType === 'INSERT' && newRow) {
+              toast(`${editorName} added ${newRow.name}`, { icon: '🛒', duration: 2800 });
+            } else if (payload.eventType === 'UPDATE' && newRow) {
+              if (newRow.is_done && !oldRow?.is_done) {
+                toast(`${editorName} ticked off ${newRow.name}`, { icon: '✅', duration: 2800 });
+              } else if (!newRow.is_done && oldRow?.is_done) {
+                toast(`${editorName} unticked ${newRow.name}`, { icon: '↩️', duration: 2800 });
+              }
+            } else if (payload.eventType === 'DELETE' && oldRow) {
+              toast(`${editorName} removed ${oldRow.name}`, { icon: '🗑️', duration: 2800 });
+            }
+          }
 
           setItems((prev) => {
             if (payload.eventType === 'INSERT') {
@@ -89,9 +117,10 @@ export function ShoppingList({ currentUserId, profiles }: ShoppingListProps) {
       .subscribe();
     return () => {
       if (pulseTimer) clearTimeout(pulseTimer);
+      if (floatTimer) clearTimeout(floatTimer);
       supabase.removeChannel(channel);
     };
-  }, [currentUserId]);
+  }, [currentUserId, profiles]);
 
   const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -153,59 +182,98 @@ export function ShoppingList({ currentUserId, profiles }: ShoppingListProps) {
 
   return (
     <Sheet open={open} onOpenChange={setOpen}>
-      <SheetTrigger asChild>
-        <button
-          className="relative w-9 h-9 rounded-full flex items-center justify-center hover:bg-muted transition-colors"
-          title="Shopping list"
-        >
-          {/* Sync pulse ring — fires when another family member changes the list */}
-          <AnimatePresence>
-            {syncPulse && (
-              <>
+      <div className="relative">
+        <SheetTrigger asChild>
+          <button
+            className="relative w-9 h-9 rounded-full flex items-center justify-center hover:bg-muted transition-colors"
+            title="Shopping list"
+          >
+            {/* Conic gradient ring sweep — appears when another family member changes the list */}
+            <AnimatePresence>
+              {syncPulse && (
+                <motion.span
+                  key="sweep"
+                  className="absolute -inset-0.5 rounded-full pointer-events-none"
+                  style={{
+                    background:
+                      'conic-gradient(from 0deg, transparent 0deg, hsl(var(--primary)) 90deg, hsl(var(--accent)) 180deg, hsl(var(--primary)) 270deg, transparent 360deg)',
+                    WebkitMask:
+                      'radial-gradient(circle, transparent 55%, #000 58%, #000 100%)',
+                    mask: 'radial-gradient(circle, transparent 55%, #000 58%, #000 100%)',
+                  }}
+                  initial={{ rotate: 0, opacity: 0 }}
+                  animate={{ rotate: 360, opacity: [0, 1, 1, 0] }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 1.3, ease: 'easeInOut', times: [0, 0.15, 0.7, 1] }}
+                />
+              )}
+            </AnimatePresence>
+
+            {/* Soft outward pulse for extra emphasis */}
+            <AnimatePresence>
+              {syncPulse && (
                 <motion.span
                   key="ring"
-                  className="absolute inset-0 rounded-full border-2 border-primary"
-                  initial={{ scale: 0.8, opacity: 0.7 }}
-                  animate={{ scale: 1.6, opacity: 0 }}
+                  className="absolute inset-0 rounded-full border border-primary/60"
+                  initial={{ scale: 0.85, opacity: 0.6 }}
+                  animate={{ scale: 1.7, opacity: 0 }}
                   exit={{ opacity: 0 }}
-                  transition={{ duration: 0.9, ease: 'easeOut' }}
+                  transition={{ duration: 1, ease: 'easeOut' }}
                 />
+              )}
+            </AnimatePresence>
+
+            <motion.span
+              animate={syncPulse ? { rotate: [0, -12, 10, -6, 0], scale: [1, 1.12, 1] } : { rotate: 0, scale: 1 }}
+              transition={{ duration: 0.6, ease: 'easeInOut' }}
+              className="relative flex items-center justify-center"
+            >
+              <ShoppingCart className={`w-[18px] h-[18px] transition-colors ${syncPulse ? 'text-primary' : 'text-foreground'}`} />
+            </motion.span>
+
+            <AnimatePresence>
+              {pending.length > 0 && (
                 <motion.span
-                  key="ring2"
-                  className="absolute inset-0 rounded-full border-2 border-primary"
-                  initial={{ scale: 0.8, opacity: 0.5 }}
-                  animate={{ scale: 2.1, opacity: 0 }}
-                  exit={{ opacity: 0 }}
-                  transition={{ duration: 1.05, ease: 'easeOut', delay: 0.15 }}
-                />
-              </>
-            )}
-          </AnimatePresence>
+                  key={pending.length}
+                  initial={{ scale: 0.4, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  exit={{ scale: 0.4, opacity: 0 }}
+                  transition={{ type: 'spring', stiffness: 500, damping: 22 }}
+                  className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 rounded-full bg-primary text-primary-foreground text-[10px] font-bold flex items-center justify-center shadow-sm ring-2 ring-card"
+                >
+                  {pending.length}
+                </motion.span>
+              )}
+            </AnimatePresence>
+          </button>
+        </SheetTrigger>
 
-          <motion.span
-            animate={syncPulse ? { rotate: [0, -12, 10, -6, 0], scale: [1, 1.12, 1] } : { rotate: 0, scale: 1 }}
-            transition={{ duration: 0.6, ease: 'easeInOut' }}
-            className="relative flex items-center justify-center"
-          >
-            <ShoppingCart className={`w-[18px] h-[18px] transition-colors ${syncPulse ? 'text-primary' : 'text-foreground'}`} />
-          </motion.span>
-
-          <AnimatePresence>
-            {pending.length > 0 && (
-              <motion.span
-                key={pending.length}
-                initial={{ scale: 0.4, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                exit={{ scale: 0.4, opacity: 0 }}
-                transition={{ type: 'spring', stiffness: 500, damping: 22 }}
-                className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 rounded-full bg-primary text-primary-foreground text-[10px] font-bold flex items-center justify-center shadow-sm ring-2 ring-card"
+        {/* Floating avatar of the family member who just changed something */}
+        <AnimatePresence>
+          {floatingEditor && (() => {
+            const av = getDisplayAvatar(floatingEditor.userId, profiles);
+            return (
+              <motion.div
+                key={floatingEditor.id}
+                initial={{ opacity: 0, y: 4, scale: 0.6 }}
+                animate={{ opacity: 1, y: -22, scale: 1 }}
+                exit={{ opacity: 0, y: -34, scale: 0.7 }}
+                transition={{ type: 'spring', stiffness: 380, damping: 22 }}
+                className="absolute left-1/2 -translate-x-1/2 -top-1 pointer-events-none z-10"
               >
-                {pending.length}
-              </motion.span>
-            )}
-          </AnimatePresence>
-        </button>
-      </SheetTrigger>
+                <div className="rounded-full ring-2 ring-card shadow-md">
+                  <MemberAvatar
+                    emoji={av.emoji}
+                    color={av.color}
+                    avatarUrl={av.avatarUrl}
+                    size="sm"
+                  />
+                </div>
+              </motion.div>
+            );
+          })()}
+        </AnimatePresence>
+      </div>
       <SheetContent side="right" className="w-full sm:max-w-md p-0 flex flex-col">
         <SheetHeader className="px-5 pt-5 pb-3 border-b border-border">
           <SheetTitle className="flex items-center gap-2 text-lg">
