@@ -421,45 +421,60 @@ function ItemRow({
       layout
       initial={{ opacity: 0, y: -4 }}
       animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, x: 20 }}
-      transition={{ duration: 0.18 }}
-      className="group flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-muted/60 transition-colors"
+      exit={{ opacity: 0, x: 24, height: 0, marginTop: 0 }}
+      transition={{ duration: 0.2 }}
+      className={`group relative flex items-center gap-3 px-3 py-2.5 rounded-xl border transition-all ${
+        item.is_done
+          ? 'bg-muted/40 border-transparent'
+          : 'bg-card border-border/50 hover:border-primary/30 hover:shadow-sm'
+      }`}
     >
       <button
         onClick={() => onToggle(item)}
-        className={`w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0 transition-all ${
+        className={`relative w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0 transition-all active:scale-90 ${
           item.is_done
-            ? 'bg-primary border-primary'
-            : 'border-muted-foreground/40 hover:border-primary'
+            ? 'bg-primary border-primary shadow-sm shadow-primary/30'
+            : 'border-muted-foreground/30 hover:border-primary hover:bg-primary/5'
         }`}
+        aria-label={item.is_done ? 'Mark as not done' : 'Mark as done'}
       >
         {item.is_done && <Check className="w-3.5 h-3.5 text-primary-foreground" strokeWidth={3} />}
       </button>
       <div className="flex-1 min-w-0">
         <div className="flex items-baseline gap-2">
           <span
-            className={`text-sm font-medium truncate ${
+            className={`text-sm font-medium truncate transition-all ${
               item.is_done ? 'line-through text-muted-foreground' : 'text-foreground'
             }`}
           >
             {item.name}
           </span>
           {item.quantity && (
-            <span className="text-xs text-muted-foreground shrink-0">{item.quantity}</span>
+            <span
+              className={`text-[11px] font-semibold shrink-0 px-1.5 py-0.5 rounded-md ${
+                item.is_done
+                  ? 'bg-muted text-muted-foreground'
+                  : 'bg-primary/10 text-primary'
+              }`}
+            >
+              {item.quantity}
+            </span>
           )}
         </div>
         {item.is_done && doneByName && item.done_at && (
-          <p className="text-[10px] text-muted-foreground mt-0.5">
-            ✓ {doneByName} · {formatDistanceToNow(new Date(item.done_at), { addSuffix: true })}
+          <p className="text-[10px] text-muted-foreground mt-0.5 flex items-center gap-1">
+            <Check className="w-2.5 h-2.5" strokeWidth={3} />
+            {doneByName} · {formatDistanceToNow(new Date(item.done_at), { addSuffix: true })}
           </p>
         )}
       </div>
       <button
         onClick={() => onDelete(item.id)}
-        className="opacity-0 group-hover:opacity-100 sm:opacity-0 w-7 h-7 rounded-full hover:bg-destructive/10 flex items-center justify-center transition-opacity"
+        className="opacity-60 sm:opacity-0 group-hover:opacity-100 w-7 h-7 rounded-lg hover:bg-destructive/10 flex items-center justify-center transition-all active:scale-90"
         title="Remove"
+        aria-label="Remove item"
       >
-        <X className="w-3.5 h-3.5 text-muted-foreground hover:text-destructive" />
+        <X className="w-3.5 h-3.5 text-muted-foreground hover:text-destructive transition-colors" />
       </button>
     </motion.div>
   );
