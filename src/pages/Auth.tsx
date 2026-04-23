@@ -96,7 +96,7 @@ export default function Auth() {
           >
             <Users className="w-7 h-7 text-primary-foreground" />
           </motion.div>
-          <h1 className="text-2xl font-bold text-foreground tracking-tight">Family Board</h1>
+          <h1 className="text-2xl font-bold text-foreground tracking-tight">Family Connect Hub</h1>
           <p className="text-sm text-muted-foreground mt-1.5">Sign in or create an account to get started</p>
         </div>
 
