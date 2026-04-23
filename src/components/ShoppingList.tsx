@@ -33,6 +33,7 @@ export function ShoppingList({ currentUserId, profiles }: ShoppingListProps) {
   const [loading, setLoading] = useState(false);
   const [adding, setAdding] = useState(false);
   const [syncPulse, setSyncPulse] = useState(false);
+  const [floatingEditor, setFloatingEditor] = useState<{ id: number; userId: string } | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
