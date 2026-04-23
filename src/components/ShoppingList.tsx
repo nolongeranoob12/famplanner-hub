@@ -274,55 +274,84 @@ export function ShoppingList({ currentUserId, profiles }: ShoppingListProps) {
           })()}
         </AnimatePresence>
       </div>
-      <SheetContent side="right" className="w-full sm:max-w-md p-0 flex flex-col">
-        <SheetHeader className="px-5 pt-5 pb-3 border-b border-border">
-          <SheetTitle className="flex items-center gap-2 text-lg">
-            <ShoppingCart className="w-5 h-5 text-primary" />
-            Shopping List
-          </SheetTitle>
-          <p className="text-xs text-muted-foreground text-left">
-            Shared with the whole family · syncs in real time
-          </p>
+      <SheetContent side="right" className="w-full sm:max-w-md p-0 flex flex-col bg-gradient-to-b from-background to-muted/30">
+        <SheetHeader className="px-5 pt-5 pb-4 border-b border-border/60 bg-card/50 backdrop-blur-sm">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center shadow-sm shadow-primary/20">
+                <ShoppingCart className="w-5 h-5 text-primary-foreground" />
+              </div>
+              <div className="text-left">
+                <SheetTitle className="text-base leading-tight">Shopping List</SheetTitle>
+                <p className="text-[11px] text-muted-foreground mt-0.5 flex items-center gap-1.5">
+                  <span className="relative flex w-1.5 h-1.5">
+                    <span className="absolute inset-0 rounded-full bg-emerald-500 animate-ping opacity-60" />
+                    <span className="relative rounded-full bg-emerald-500 w-1.5 h-1.5" />
+                  </span>
+                  Live · synced with family
+                </p>
+              </div>
+            </div>
+            {items.length > 0 && (
+              <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-muted text-[11px] font-semibold text-muted-foreground">
+                <span className="text-foreground">{pending.length}</span>
+                <span>left</span>
+              </div>
+            )}
+          </div>
         </SheetHeader>
 
-        <form onSubmit={handleAdd} className="px-5 py-3 border-b border-border bg-muted/30">
+        <form onSubmit={handleAdd} className="px-5 py-3.5 border-b border-border/60 bg-card/40">
           <div className="flex gap-2">
             <Input
               placeholder="Add item (e.g. Milk)"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="flex-1"
+              className="flex-1 h-10 rounded-xl bg-background border-border/70 focus-visible:ring-primary/30"
               autoFocus
             />
             <Input
               placeholder="Qty"
               value={qty}
               onChange={(e) => setQty(e.target.value)}
-              className="w-20"
+              className="w-16 h-10 rounded-xl bg-background border-border/70 text-center focus-visible:ring-primary/30"
             />
-            <Button type="submit" size="icon" disabled={!name.trim() || adding}>
+            <Button
+              type="submit"
+              size="icon"
+              disabled={!name.trim() || adding}
+              className="h-10 w-10 rounded-xl shadow-sm shadow-primary/20 disabled:opacity-40 disabled:shadow-none"
+            >
               <Plus className="w-4 h-4" />
             </Button>
           </div>
         </form>
 
-        <div className="flex-1 overflow-y-auto px-3 py-2">
+        <div className="flex-1 overflow-y-auto px-3 py-3">
           {loading && items.length === 0 ? (
-            <div className="text-center py-12 text-sm text-muted-foreground">Loading…</div>
+            <div className="space-y-2 px-1">
+              {[0, 1, 2].map((i) => (
+                <div
+                  key={i}
+                  className="h-12 rounded-xl bg-muted/60 animate-pulse"
+                  style={{ animationDelay: `${i * 80}ms` }}
+                />
+              ))}
+            </div>
           ) : items.length === 0 ? (
             <div className="text-center py-16 px-6">
-              <div className="w-14 h-14 rounded-2xl bg-muted flex items-center justify-center mx-auto mb-3">
-                <ShoppingCart className="w-7 h-7 text-muted-foreground" />
+              <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary/15 to-primary/5 flex items-center justify-center mx-auto mb-4 ring-1 ring-primary/10">
+                <ShoppingCart className="w-7 h-7 text-primary/70" />
               </div>
-              <p className="font-semibold text-foreground">List is empty</p>
-              <p className="text-sm text-muted-foreground mt-1">
+              <p className="font-semibold text-foreground">Your list is empty</p>
+              <p className="text-sm text-muted-foreground mt-1.5 max-w-[240px] mx-auto">
                 Add the first item — your family will see it instantly.
               </p>
             </div>
           ) : (
             <>
               {pending.length > 0 && (
-                <div className="space-y-1 py-1">
+                <div className="space-y-1.5">
                   <AnimatePresence initial={false}>
                     {pending.map((item) => (
                       <ItemRow
@@ -338,19 +367,20 @@ export function ShoppingList({ currentUserId, profiles }: ShoppingListProps) {
               )}
 
               {done.length > 0 && (
-                <div className="mt-3">
-                  <div className="flex items-center justify-between px-2 py-2">
-                    <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
+                <div className="mt-5">
+                  <div className="flex items-center gap-3 px-2 mb-2">
+                    <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.12em]">
                       Done · {done.length}
                     </span>
+                    <div className="flex-1 h-px bg-border/60" />
                     <button
                       onClick={handleClearDone}
-                      className="text-[11px] font-medium text-primary hover:underline flex items-center gap-1"
+                      className="text-[11px] font-semibold text-muted-foreground hover:text-destructive transition-colors flex items-center gap-1"
                     >
                       <Trash2 className="w-3 h-3" /> Clear
                     </button>
                   </div>
-                  <div className="space-y-1">
+                  <div className="space-y-1.5 opacity-90">
                     <AnimatePresence initial={false}>
                       {done.map((item) => (
                         <ItemRow
