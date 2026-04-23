@@ -12,7 +12,7 @@ workflows:
         distribution_type: app_store
         bundle_identifier: com.nolongeranoob12.famplannerhub
     integrations:
-      app_store_connect: Codemagic
+      app_store_connect: Codemagic IOS Build
     scripts:
       - name: Install dependencies
         script: npm install
