@@ -30,6 +30,13 @@ workflows:
           cat ios/App/App/Info.plist | grep BundleIdentifier
           /usr/libexec/PlistBuddy -c "Set :CFBundleVersion 2" ios/App/App/Info.plist
           /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString 1.0.1" ios/App/App/Info.plist
+      - name: Install App Icon
+        script: |
+          ICON_DIR="ios/App/App/Assets.xcassets/AppIcon.appiconset"
+          mkdir -p "$ICON_DIR"
+          cp ios-assets/AppIcon-1024.png "$ICON_DIR/AppIcon-1024.png"
+          cp ios-assets/Contents.json "$ICON_DIR/Contents.json"
+          ls -la "$ICON_DIR"
       - name: Install CocoaPods
         script: |
           cd ios/App
