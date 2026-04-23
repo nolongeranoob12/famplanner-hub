@@ -415,6 +415,7 @@ function ItemRow({
   onDelete: (id: string) => void;
 }) {
   const doneByName = item.done_by ? profiles[item.done_by]?.display_name : null;
+  const addedByName = item.user_id ? profiles[item.user_id]?.display_name : null;
 
   return (
     <motion.div
