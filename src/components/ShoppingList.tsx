@@ -274,55 +274,84 @@ export function ShoppingList({ currentUserId, profiles }: ShoppingListProps) {
           })()}
         </AnimatePresence>
       </div>
-      <SheetContent side="right" className="w-full sm:max-w-md p-0 flex flex-col">
-        <SheetHeader className="px-5 pt-5 pb-3 border-b border-border">
-          <SheetTitle className="flex items-center gap-2 text-lg">
-            <ShoppingCart className="w-5 h-5 text-primary" />
-            Shopping List
-          </SheetTitle>
-          <p className="text-xs text-muted-foreground text-left">
-            Shared with the whole family · syncs in real time
-          </p>
+      <SheetContent side="right" className="w-full sm:max-w-md p-0 flex flex-col bg-gradient-to-b from-background to-muted/30">
+        <SheetHeader className="px-5 pt-5 pb-4 border-b border-border/60 bg-card/50 backdrop-blur-sm">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center shadow-sm shadow-primary/20">
+                <ShoppingCart className="w-5 h-5 text-primary-foreground" />
+              </div>
+              <div className="text-left">
+                <SheetTitle className="text-base leading-tight">Shopping List</SheetTitle>
+                <p className="text-[11px] text-muted-foreground mt-0.5 flex items-center gap-1.5">
+                  <span className="relative flex w-1.5 h-1.5">
+                    <span className="absolute inset-0 rounded-full bg-emerald-500 animate-ping opacity-60" />
+                    <span className="relative rounded-full bg-emerald-500 w-1.5 h-1.5" />
+                  </span>
+                  Live · synced with family
+                </p>
+              </div>
+            </div>
+            {items.length > 0 && (
+              <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-muted text-[11px] font-semibold text-muted-foreground">
+                <span className="text-foreground">{pending.length}</span>
+                <span>left</span>
+              </div>
+            )}
+          </div>
         </SheetHeader>
 
-        <form onSubmit={handleAdd} className="px-5 py-3 border-b border-border bg-muted/30">
+        <form onSubmit={handleAdd} className="px-5 py-3.5 border-b border-border/60 bg-card/40">
           <div className="flex gap-2">
             <Input
               placeholder="Add item (e.g. Milk)"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="flex-1"
+              className="flex-1 h-10 rounded-xl bg-background border-border/70 focus-visible:ring-primary/30"
               autoFocus
             />
             <Input
               placeholder="Qty"
               value={qty}
               onChange={(e) => setQty(e.target.value)}
-              className="w-20"
+              className="w-16 h-10 rounded-xl bg-background border-border/70 text-center focus-visible:ring-primary/30"
             />
-            <Button type="submit" size="icon" disabled={!name.trim() || adding}>
+            <Button
+              type="submit"
+              size="icon"
+              disabled={!name.trim() || adding}
+              className="h-10 w-10 rounded-xl shadow-sm shadow-primary/20 disabled:opacity-40 disabled:shadow-none"
+            >
               <Plus className="w-4 h-4" />
             </Button>
           </div>
         </form>
 
-        <div className="flex-1 overflow-y-auto px-3 py-2">
+        <div className="flex-1 overflow-y-auto px-3 py-3">
           {loading && items.length === 0 ? (
-            <div className="text-center py-12 text-sm text-muted-foreground">Loading…</div>
+            <div className="space-y-2 px-1">
+              {[0, 1, 2].map((i) => (
+                <div
+                  key={i}
+                  className="h-12 rounded-xl bg-muted/60 animate-pulse"
+                  style={{ animationDelay: `${i * 80}ms` }}
+                />
+              ))}
+            </div>
           ) : items.length === 0 ? (
             <div className="text-center py-16 px-6">
-              <div className="w-14 h-14 rounded-2xl bg-muted flex items-center justify-center mx-auto mb-3">
-                <ShoppingCart className="w-7 h-7 text-muted-foreground" />
+              <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary/15 to-primary/5 flex items-center justify-center mx-auto mb-4 ring-1 ring-primary/10">
+                <ShoppingCart className="w-7 h-7 text-primary/70" />
               </div>
-              <p className="font-semibold text-foreground">List is empty</p>
-              <p className="text-sm text-muted-foreground mt-1">
+              <p className="font-semibold text-foreground">Your list is empty</p>
+              <p className="text-sm text-muted-foreground mt-1.5 max-w-[240px] mx-auto">
                 Add the first item — your family will see it instantly.
               </p>
             </div>
           ) : (
             <>
               {pending.length > 0 && (
-                <div className="space-y-1 py-1">
+                <div className="space-y-1.5">
                   <AnimatePresence initial={false}>
                     {pending.map((item) => (
                       <ItemRow
@@ -338,19 +367,20 @@ export function ShoppingList({ currentUserId, profiles }: ShoppingListProps) {
               )}
 
               {done.length > 0 && (
-                <div className="mt-3">
-                  <div className="flex items-center justify-between px-2 py-2">
-                    <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
+                <div className="mt-5">
+                  <div className="flex items-center gap-3 px-2 mb-2">
+                    <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.12em]">
                       Done · {done.length}
                     </span>
+                    <div className="flex-1 h-px bg-border/60" />
                     <button
                       onClick={handleClearDone}
-                      className="text-[11px] font-medium text-primary hover:underline flex items-center gap-1"
+                      className="text-[11px] font-semibold text-muted-foreground hover:text-destructive transition-colors flex items-center gap-1"
                     >
                       <Trash2 className="w-3 h-3" /> Clear
                     </button>
                   </div>
-                  <div className="space-y-1">
+                  <div className="space-y-1.5 opacity-90">
                     <AnimatePresence initial={false}>
                       {done.map((item) => (
                         <ItemRow
@@ -391,45 +421,60 @@ function ItemRow({
       layout
       initial={{ opacity: 0, y: -4 }}
       animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, x: 20 }}
-      transition={{ duration: 0.18 }}
-      className="group flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-muted/60 transition-colors"
+      exit={{ opacity: 0, x: 24, height: 0, marginTop: 0 }}
+      transition={{ duration: 0.2 }}
+      className={`group relative flex items-center gap-3 px-3 py-2.5 rounded-xl border transition-all ${
+        item.is_done
+          ? 'bg-muted/40 border-transparent'
+          : 'bg-card border-border/50 hover:border-primary/30 hover:shadow-sm'
+      }`}
     >
       <button
         onClick={() => onToggle(item)}
-        className={`w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0 transition-all ${
+        className={`relative w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0 transition-all active:scale-90 ${
           item.is_done
-            ? 'bg-primary border-primary'
-            : 'border-muted-foreground/40 hover:border-primary'
+            ? 'bg-primary border-primary shadow-sm shadow-primary/30'
+            : 'border-muted-foreground/30 hover:border-primary hover:bg-primary/5'
         }`}
+        aria-label={item.is_done ? 'Mark as not done' : 'Mark as done'}
       >
         {item.is_done && <Check className="w-3.5 h-3.5 text-primary-foreground" strokeWidth={3} />}
       </button>
       <div className="flex-1 min-w-0">
         <div className="flex items-baseline gap-2">
           <span
-            className={`text-sm font-medium truncate ${
+            className={`text-sm font-medium truncate transition-all ${
               item.is_done ? 'line-through text-muted-foreground' : 'text-foreground'
             }`}
           >
             {item.name}
           </span>
           {item.quantity && (
-            <span className="text-xs text-muted-foreground shrink-0">{item.quantity}</span>
+            <span
+              className={`text-[11px] font-semibold shrink-0 px-1.5 py-0.5 rounded-md ${
+                item.is_done
+                  ? 'bg-muted text-muted-foreground'
+                  : 'bg-primary/10 text-primary'
+              }`}
+            >
+              {item.quantity}
+            </span>
           )}
         </div>
         {item.is_done && doneByName && item.done_at && (
-          <p className="text-[10px] text-muted-foreground mt-0.5">
-            ✓ {doneByName} · {formatDistanceToNow(new Date(item.done_at), { addSuffix: true })}
+          <p className="text-[10px] text-muted-foreground mt-0.5 flex items-center gap-1">
+            <Check className="w-2.5 h-2.5" strokeWidth={3} />
+            {doneByName} · {formatDistanceToNow(new Date(item.done_at), { addSuffix: true })}
           </p>
         )}
       </div>
       <button
         onClick={() => onDelete(item.id)}
-        className="opacity-0 group-hover:opacity-100 sm:opacity-0 w-7 h-7 rounded-full hover:bg-destructive/10 flex items-center justify-center transition-opacity"
+        className="opacity-60 sm:opacity-0 group-hover:opacity-100 w-7 h-7 rounded-lg hover:bg-destructive/10 flex items-center justify-center transition-all active:scale-90"
         title="Remove"
+        aria-label="Remove item"
       >
-        <X className="w-3.5 h-3.5 text-muted-foreground hover:text-destructive" />
+        <X className="w-3.5 h-3.5 text-muted-foreground hover:text-destructive transition-colors" />
       </button>
     </motion.div>
   );
