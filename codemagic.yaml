@@ -8,6 +8,7 @@ workflows:
       cocoapods: default
       vars:
         BUNDLE_ID: "com.nolongeranoob12.famplannerhub"
+        BUILD_NUMBER: $(($(app-store-connect get-latest-build-number "com.nolongeranoob12.famplannerhub") + 1))
       ios_signing:
         distribution_type: app_store
         bundle_identifier: com.nolongeranoob12.famplannerhub
@@ -37,7 +38,8 @@ workflows:
           xcode-project use-profiles
           xcode-project build-ipa \
             --workspace ios/App/App.xcworkspace \
-            --scheme App
+            --scheme App \
+            --build-number $BUILD_NUMBER
     artifacts:
       - build/ios/ipa/*.ipa
     publishing:
