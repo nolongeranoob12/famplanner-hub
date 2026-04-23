@@ -39,7 +39,6 @@ workflows:
           xcode-project build-ipa \
             --workspace ios/App/App.xcworkspace \
             --scheme App \
-            --build-number $BUILD_NUMBER
     artifacts:
       - build/ios/ipa/*.ipa
     publishing:
