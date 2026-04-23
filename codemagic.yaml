@@ -24,9 +24,12 @@ workflows:
           npx cap init "Family Connect Hub" "com.nolongeranoob12.famplannerhub" --web-dir=dist
           npx cap add ios
           npx cap sync ios
-          ls ios/App
+          ls -la
+          ls -la ios/ || echo "ios folder not found"
+          ls -la ios/App/ || echo "ios/App folder not found"
       - name: Install CocoaPods
         script: |
+          ls -la ios/App/
           cd ios/App && pod install
       - name: Build iOS
         script: |
