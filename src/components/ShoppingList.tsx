@@ -53,10 +53,16 @@ export function ShoppingList({ currentUserId, profiles }: ShoppingListProps) {
 
   useEffect(() => {
     let pulseTimer: ReturnType<typeof setTimeout> | null = null;
-    const triggerPulse = () => {
+    let floatTimer: ReturnType<typeof setTimeout> | null = null;
+    const triggerPulse = (editorId?: string | null) => {
       setSyncPulse(true);
       if (pulseTimer) clearTimeout(pulseTimer);
-      pulseTimer = setTimeout(() => setSyncPulse(false), 1100);
+      pulseTimer = setTimeout(() => setSyncPulse(false), 1400);
+      if (editorId) {
+        setFloatingEditor({ id: Date.now(), userId: editorId });
+        if (floatTimer) clearTimeout(floatTimer);
+        floatTimer = setTimeout(() => setFloatingEditor(null), 2200);
+      }
     };
     const channel = supabase
       .channel('shopping-items-sync')
@@ -64,11 +70,31 @@ export function ShoppingList({ currentUserId, profiles }: ShoppingListProps) {
         'postgres_changes',
         { event: '*', schema: 'public', table: 'shopping_items' },
         (payload) => {
-          // Pulse the cart only for changes coming from OTHER users
-          const fromOther =
-            (payload.new as ShoppingItem | null)?.user_id !== currentUserId &&
-            (payload.old as ShoppingItem | null)?.user_id !== currentUserId;
-          if (fromOther) triggerPulse();
+          const newRow = payload.new as ShoppingItem | null;
+          const oldRow = payload.old as ShoppingItem | null;
+          // Identify the editor: for toggle updates use done_by, otherwise the row's user_id
+          const editorId =
+            (payload.eventType === 'UPDATE' && newRow?.done_by) ||
+            newRow?.user_id ||
+            oldRow?.user_id ||
+            null;
+          const fromOther = editorId && editorId !== currentUserId;
+
+          if (fromOther) {
+            triggerPulse(editorId);
+            const editorName = profiles[editorId]?.display_name?.split(' ')[0] || 'Someone';
+            if (payload.eventType === 'INSERT' && newRow) {
+              toast(`${editorName} added ${newRow.name}`, { icon: '🛒', duration: 2800 });
+            } else if (payload.eventType === 'UPDATE' && newRow) {
+              if (newRow.is_done && !oldRow?.is_done) {
+                toast(`${editorName} ticked off ${newRow.name}`, { icon: '✅', duration: 2800 });
+              } else if (!newRow.is_done && oldRow?.is_done) {
+                toast(`${editorName} unticked ${newRow.name}`, { icon: '↩️', duration: 2800 });
+              }
+            } else if (payload.eventType === 'DELETE' && oldRow) {
+              toast(`${editorName} removed ${oldRow.name}`, { icon: '🗑️', duration: 2800 });
+            }
+          }
 
           setItems((prev) => {
             if (payload.eventType === 'INSERT') {
@@ -91,9 +117,10 @@ export function ShoppingList({ currentUserId, profiles }: ShoppingListProps) {
       .subscribe();
     return () => {
       if (pulseTimer) clearTimeout(pulseTimer);
+      if (floatTimer) clearTimeout(floatTimer);
       supabase.removeChannel(channel);
     };
-  }, [currentUserId]);
+  }, [currentUserId, profiles]);
 
   const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault();
