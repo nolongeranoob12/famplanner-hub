@@ -24,7 +24,9 @@ workflows:
           npx cap init "Family Connect Hub" "com.nolongeranoob12.famplannerhub" --web-dir=dist
           npx cap add ios
           npx cap sync ios
-          /usr/libexec/PlistBuddy -c "Set :CFBundleIdentifier com.nolongeranoob12.famplannerhub" ios/App/App/Info.plist
+          sed -i '' 's/app.lovable.chaufamily/com.nolongeranoob12.famplannerhub/g' ios/App/App.xcodeproj/project.pbxproj
+          sed -i '' 's/app.lovable.chaufamily/com.nolongeranoob12.famplannerhub/g' ios/App/App/Info.plist
+          cat ios/App/App/Info.plist | grep BundleIdentifier
       - name: Install CocoaPods
         script: |
           cd ios/App
