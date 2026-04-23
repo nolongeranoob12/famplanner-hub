@@ -46,6 +46,11 @@ export async function removeFamilyMember(userId: string): Promise<void> {
   if (error) throw error;
 }
 
+export async function deleteMyAccount(): Promise<void> {
+  const { error } = await supabase.rpc('delete_my_account' as any);
+  if (error) throw error;
+}
+
 export async function isFamilyOwner(familyId: string, userId: string): Promise<boolean> {
   const { data } = await supabase
     .from('user_roles' as any)
