@@ -417,6 +417,7 @@ export type Database = {
     }
     Functions: {
       create_family: { Args: { _name: string }; Returns: string }
+      delete_my_account: { Args: never; Returns: undefined }
       generate_invite_code: { Args: never; Returns: string }
       get_my_family_id: { Args: never; Returns: string }
       has_family_role: {
