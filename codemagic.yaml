@@ -18,7 +18,7 @@ workflows:
         script: npm install
       - name: Build web app
         script: npm run build
-- name: Install Capacitor
+      - name: Install Capacitor
         script: |
           npm install @capacitor/core @capacitor/cli @capacitor/ios
           npx cap init "Family Connect Hub" "com.nolongeranoob12.famplannerhub" --web-dir=dist
