@@ -218,10 +218,47 @@ export function FamilySettings() {
             </section>
           )}
 
-          <section className="pt-4 border-t">
-            <Button variant="outline" onClick={() => { signOut(); setOpen(false); }} className="w-full rounded-lg text-destructive hover:text-destructive">
+          <section className="pt-4 border-t space-y-2">
+            <Button variant="outline" onClick={() => { signOut(); setOpen(false); }} className="w-full rounded-lg">
               <LogOut className="w-4 h-4 mr-2" /> Sign out
             </Button>
+
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="ghost" className="w-full rounded-lg text-destructive hover:text-destructive hover:bg-destructive/10" disabled={busy}>
+                  <Trash2 className="w-4 h-4 mr-2" /> Delete my account
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Delete your account?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This permanently removes your profile, family membership, push notifications and login from this app. Your past activities and reactions will remain visible to your family. This cannot be undone.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={async () => {
+                      setBusy(true);
+                      try {
+                        await deleteMyAccount();
+                        toast.success('Account deleted');
+                        await signOut();
+                        setOpen(false);
+                      } catch (err) {
+                        toast.error((err as Error).message);
+                      } finally {
+                        setBusy(false);
+                      }
+                    }}
+                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                  >
+                    Delete forever
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
           </section>
         </div>
       </SheetContent>
