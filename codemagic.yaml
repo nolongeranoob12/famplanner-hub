@@ -8,10 +8,11 @@ workflows:
       cocoapods: default
       vars:
         BUNDLE_ID: "com.nolongeranoob12.famplannerhub"
-        APP_STORE_APPLE_ID: Paste_Your_Apple_ID_Here
       ios_signing:
         distribution_type: app_store
         bundle_identifier: com.nolongeranoob12.famplannerhub
+    integrations:
+      app_store_connect: Codemagic
     scripts:
       - name: Install dependencies
         script: npm install
@@ -20,7 +21,7 @@ workflows:
       - name: Install Capacitor
         script: |
           npm install @capacitor/core @capacitor/cli @capacitor/ios
-          npx cap init "FamPlanner Hub" "com.nolongeranoob12.famplannerhub" --web-dir=dist
+          npx cap init "Family Connect Hub" "com.nolongeranoob12.famplannerhub" --web-dir=dist
           npx cap add ios
           npx cap sync ios
       - name: Install CocoaPods
