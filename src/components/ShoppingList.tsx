@@ -415,6 +415,7 @@ function ItemRow({
   onDelete: (id: string) => void;
 }) {
   const doneByName = item.done_by ? profiles[item.done_by]?.display_name : null;
+  const addedByName = item.user_id ? profiles[item.user_id]?.display_name : null;
 
   return (
     <motion.div
@@ -449,6 +450,11 @@ function ItemRow({
           >
             {item.name}
           </span>
+          {addedByName && !item.is_done && (
+            <p className="text-[10px] text-muted-foreground/60 mt-0.5">
+              Added by {addedByName}
+            </p>
+          )}
           {item.is_done && doneByName && item.done_at && (
             <p className="text-[10px] text-muted-foreground mt-0.5 flex items-center gap-1">
               <Check className="w-2.5 h-2.5" strokeWidth={3} />
