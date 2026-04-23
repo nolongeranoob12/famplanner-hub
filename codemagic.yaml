@@ -24,10 +24,10 @@ workflows:
           npx cap init "Family Connect Hub" "com.nolongeranoob12.famplannerhub" --web-dir=dist
           npx cap add ios
           npx cap sync ios
+          ls ios/App
       - name: Install CocoaPods
         script: |
-          cd ios/App
-          pod install
+          cd ios/App && pod install
       - name: Build iOS
         script: |
           xcode-project use-profiles
