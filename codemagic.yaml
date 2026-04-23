@@ -28,6 +28,8 @@ workflows:
           sed -i '' 's/app.lovable.chaufamily/com.nolongeranoob12.famplannerhub/g' ios/App/App.xcodeproj/project.pbxproj
           sed -i '' 's/app.lovable.chaufamily/com.nolongeranoob12.famplannerhub/g' ios/App/App/Info.plist
           cat ios/App/App/Info.plist | grep BundleIdentifier
+          /usr/libexec/PlistBuddy -c "Set :CFBundleVersion 2" ios/App/App/Info.plist
+          /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString 1.0.1" ios/App/App/Info.plist
       - name: Install CocoaPods
         script: |
           cd ios/App
