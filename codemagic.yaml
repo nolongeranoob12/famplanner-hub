@@ -34,7 +34,7 @@ workflows:
           pod install
       - name: Build iOS
         script: |
-          xcode-project use-profiles
+          xcode-project use-profiles --profile-name "FamPlanner AppStore Profile"
           xcode-project build-ipa \
             --workspace ios/App/App.xcworkspace \
             --scheme App
