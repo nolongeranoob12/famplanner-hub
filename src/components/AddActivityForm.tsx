@@ -36,14 +36,22 @@ export function AddActivityForm({ onAdd, currentUserId, profiles }: AddActivityF
   const me = getDisplayAvatar(currentUserId, profiles);
 
   const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    if (file.size > 5 * 1024 * 1024) {
-      toast.error('Image must be under 5MB');
-      return;
+    try {
+      const file = e.target.files?.[0];
+      // No file = user cancelled or denied permission. Just exit silently.
+      if (!file) return;
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error('Image must be under 5MB');
+        if (fileInputRef.current) fileInputRef.current.value = '';
+        return;
+      }
+      setImageFile(file);
+      setImagePreview(URL.createObjectURL(file));
+    } catch (err) {
+      console.error('Photo selection failed:', err);
+      toast.error('Could not access photo. Please check camera & photo permissions in Settings.');
+      if (fileInputRef.current) fileInputRef.current.value = '';
     }
-    setImageFile(file);
-    setImagePreview(URL.createObjectURL(file));
   };
 
   const removeImage = () => {
