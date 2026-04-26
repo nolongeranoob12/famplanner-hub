@@ -100,7 +100,7 @@ async function createVapidAuthHeader(endpoint: string, publicKeyB64: string, pri
   const aud = new URL(endpoint).origin;
   const exp = Math.floor(Date.now() / 1000) + 12 * 3600;
   const header = { typ: "JWT", alg: "ES256" };
-  const payload = { aud, exp, sub: "mailto:family@chaufamily.app" };
+  const payload = { aud, exp, sub: "mailto:family@familyconnecthub.app" };
   const enc = new TextEncoder();
   const headerB64 = uint8ToBase64Url(enc.encode(JSON.stringify(header)));
   const payloadB64 = uint8ToBase64Url(enc.encode(JSON.stringify(payload)));
