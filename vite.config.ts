@@ -28,8 +28,8 @@ export default defineConfig(({ mode }) => ({
         rollupFormat: "iife",
       },
       manifest: {
-        name: "Chau Family",
-        short_name: "ChauFamily",
+        name: "Family Connect Hub",
+        short_name: "Family Hub",
         description: "Family activity board — see what everyone's up to",
         theme_color: "#d4713b",
         background_color: "#f7f2ed",

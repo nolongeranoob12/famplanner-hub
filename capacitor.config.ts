@@ -3,7 +3,7 @@ import type { CapacitorConfig } from '@capacitor/cli';
 const isDev = process.env.CAP_ENV === 'development';
 
 const config: CapacitorConfig = {
-  appId: 'app.lovable.chaufamily',
+  appId: 'com.nolongeranoob12.famplannerhub',
   appName: 'Family Connect Hub',
   version: '1.0.1',
   webDir: 'dist',

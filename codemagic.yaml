@@ -25,8 +25,7 @@ workflows:
           npx cap init "Family Connect Hub" "com.nolongeranoob12.famplannerhub" --web-dir=dist
           npx cap add ios
           npx cap sync ios
-          sed -i '' 's/app.lovable.chaufamily/com.nolongeranoob12.famplannerhub/g' ios/App/App.xcodeproj/project.pbxproj
-          sed -i '' 's/app.lovable.chaufamily/com.nolongeranoob12.famplannerhub/g' ios/App/App/Info.plist
+          # Bundle ID is now set directly in capacitor.config.ts — no sed substitution needed.
           cat ios/App/App/Info.plist | grep BundleIdentifier
           /usr/libexec/PlistBuddy -c "Set :CFBundleVersion 3" ios/App/App/Info.plist
           /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString 1.0.1" ios/App/App/Info.plist
