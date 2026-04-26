@@ -30,11 +30,12 @@ function concat(...arrays: Uint8Array[]): Uint8Array {
 }
 
 async function hkdfExtractAndExpand(salt: Uint8Array, ikm: Uint8Array, info: Uint8Array, length: number): Promise<Uint8Array> {
-  const prk = await crypto.subtle.importKey("raw", ikm, { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
-  const prkSigned = new Uint8Array(await crypto.subtle.sign("HMAC", prk, salt.length ? salt : new Uint8Array(32)));
-  const key = await crypto.subtle.importKey("raw", prkSigned, { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
+  const prk = await crypto.subtle.importKey("raw", ikm as BufferSource, { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
+  const saltBuf = (salt.length ? salt : new Uint8Array(32)) as BufferSource;
+  const prkSigned = new Uint8Array(await crypto.subtle.sign("HMAC", prk, saltBuf));
+  const key = await crypto.subtle.importKey("raw", prkSigned as BufferSource, { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
   const infoWithCounter = concat(info, new Uint8Array([1]));
-  const okm = new Uint8Array(await crypto.subtle.sign("HMAC", key, infoWithCounter));
+  const okm = new Uint8Array(await crypto.subtle.sign("HMAC", key, infoWithCounter as BufferSource));
   return okm.slice(0, length);
 }
 
@@ -54,7 +55,7 @@ async function encryptPayload(plaintext: Uint8Array, subscriberPublicKeyB64: str
   const subscriberPublicKeyRaw = base64UrlToUint8Array(subscriberPublicKeyB64.replace(/\+/g, "-").replace(/\//g, "_"));
   const localKeyPair = await crypto.subtle.generateKey({ name: "ECDH", namedCurve: "P-256" }, true, ["deriveBits"]);
   const localPublicKeyRaw = new Uint8Array(await crypto.subtle.exportKey("raw", localKeyPair.publicKey));
-  const subscriberPublicKey = await crypto.subtle.importKey("raw", subscriberPublicKeyRaw, { name: "ECDH", namedCurve: "P-256" }, false, []);
+  const subscriberPublicKey = await crypto.subtle.importKey("raw", subscriberPublicKeyRaw as BufferSource, { name: "ECDH", namedCurve: "P-256" }, false, []);
   const sharedSecret = new Uint8Array(await crypto.subtle.deriveBits({ name: "ECDH", public: subscriberPublicKey }, localKeyPair.privateKey, 256));
   const salt = crypto.getRandomValues(new Uint8Array(16));
   const enc = new TextEncoder();
@@ -65,8 +66,8 @@ async function encryptPayload(plaintext: Uint8Array, subscriberPublicKeyB64: str
   const cek = await hkdfExtractAndExpand(salt, ikm, cekInfo, 16);
   const nonce = await hkdfExtractAndExpand(salt, ikm, nonceInfo, 12);
   const padded = concat(plaintext, new Uint8Array([2]));
-  const aesKey = await crypto.subtle.importKey("raw", cek, { name: "AES-GCM" }, false, ["encrypt"]);
-  const ciphertext = new Uint8Array(await crypto.subtle.encrypt({ name: "AES-GCM", iv: nonce }, aesKey, padded));
+  const aesKey = await crypto.subtle.importKey("raw", cek as BufferSource, { name: "AES-GCM" }, false, ["encrypt"]);
+  const ciphertext = new Uint8Array(await crypto.subtle.encrypt({ name: "AES-GCM", iv: nonce as BufferSource }, aesKey, padded as BufferSource));
   const rs = new Uint8Array(4);
   const rsView = new DataView(rs.buffer);
   rsView.setUint32(0, 4096);
