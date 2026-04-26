@@ -114,7 +114,7 @@ export default function Onboarding() {
           <Card>
             <CardContent className="pt-6">
               <form onSubmit={handleCreate} className="space-y-3">
-                <Input placeholder="Family name (e.g. The Chau Family)" value={familyName} onChange={(e) => setFamilyName(e.target.value)} maxLength={50} required autoFocus className="rounded-xl h-11" />
+                <Input placeholder="Family name (e.g. The Smith Family)" value={familyName} onChange={(e) => setFamilyName(e.target.value)} maxLength={50} required autoFocus className="rounded-xl h-11" />
                 <Button type="submit" disabled={busy} className="w-full rounded-xl h-11 font-semibold">
                   {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Create family'}
                 </Button>
