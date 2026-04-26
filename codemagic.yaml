@@ -30,6 +30,10 @@ workflows:
           cat ios/App/App/Info.plist | grep BundleIdentifier
           /usr/libexec/PlistBuddy -c "Set :CFBundleVersion 3" ios/App/App/Info.plist
           /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString 1.0.1" ios/App/App/Info.plist
+          /usr/libexec/PlistBuddy -c "Set :CFBundleDisplayName 'Family Connect Hub'" ios/App/App/Info.plist || \
+            /usr/libexec/PlistBuddy -c "Add :CFBundleDisplayName string 'Family Connect Hub'" ios/App/App/Info.plist
+          /usr/libexec/PlistBuddy -c "Set :CFBundleName 'Family Connect Hub'" ios/App/App/Info.plist || \
+            /usr/libexec/PlistBuddy -c "Add :CFBundleName string 'Family Connect Hub'" ios/App/App/Info.plist
           # Required iOS privacy permissions (camera + photo library) — without these, iPad crashes when tapping a file input.
           /usr/libexec/PlistBuddy -c "Add :NSCameraUsageDescription string 'This app needs access to the camera to attach photos to family activities.'" ios/App/App/Info.plist || \
             /usr/libexec/PlistBuddy -c "Set :NSCameraUsageDescription 'This app needs access to the camera to attach photos to family activities.'" ios/App/App/Info.plist
