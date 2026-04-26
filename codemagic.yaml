@@ -30,6 +30,13 @@ workflows:
           cat ios/App/App/Info.plist | grep BundleIdentifier
           /usr/libexec/PlistBuddy -c "Set :CFBundleVersion 3" ios/App/App/Info.plist
           /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString 1.0.1" ios/App/App/Info.plist
+          # Required iOS privacy permissions (camera + photo library) — without these, iPad crashes when tapping a file input.
+          /usr/libexec/PlistBuddy -c "Add :NSCameraUsageDescription string 'This app needs access to the camera to attach photos to family activities.'" ios/App/App/Info.plist || \
+            /usr/libexec/PlistBuddy -c "Set :NSCameraUsageDescription 'This app needs access to the camera to attach photos to family activities.'" ios/App/App/Info.plist
+          /usr/libexec/PlistBuddy -c "Add :NSPhotoLibraryUsageDescription string 'This app needs access to your photo library to attach photos to family activities.'" ios/App/App/Info.plist || \
+            /usr/libexec/PlistBuddy -c "Set :NSPhotoLibraryUsageDescription 'This app needs access to your photo library to attach photos to family activities.'" ios/App/App/Info.plist
+          /usr/libexec/PlistBuddy -c "Add :NSPhotoLibraryAddUsageDescription string 'This app needs permission to save photos to your photo library.'" ios/App/App/Info.plist || \
+            /usr/libexec/PlistBuddy -c "Set :NSPhotoLibraryAddUsageDescription 'This app needs permission to save photos to your photo library.'" ios/App/App/Info.plist
       - name: Install App Icon
         script: |
           ICON_DIR="ios/App/App/Assets.xcassets/AppIcon.appiconset"
