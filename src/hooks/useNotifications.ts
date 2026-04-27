@@ -1,5 +1,8 @@
 import { useEffect, useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { Capacitor } from '@capacitor/core';
+import { App } from '@capacitor/app';
+import { Badge } from '@capawesome/capacitor-badge';
 
 export interface AppNotification {
   id: string;
@@ -78,6 +81,14 @@ export function useNotifications(currentUserId: string | null) {
 
   useEffect(() => {
     const badgeNavigator = navigator as BadgeNavigator;
+    if (Capacitor.isNativePlatform()) {
+      if (unreadCount > 0) {
+        Badge.set({ count: unreadCount }).catch(() => undefined);
+      } else {
+        Badge.clear().catch(() => undefined);
+      }
+      return;
+    }
     navigator.serviceWorker?.ready
       .then((reg) => { reg.active?.postMessage({ type: 'set-badge-count', count: unreadCount }); })
       .catch(() => undefined);
@@ -87,6 +98,18 @@ export function useNotifications(currentUserId: string | null) {
     }
     badgeNavigator.clearAppBadge?.().catch(() => undefined);
   }, [unreadCount]);
+
+  useEffect(() => {
+    if (!currentUserId || !Capacitor.isNativePlatform()) return;
+    const onNativePush = () => fetchNotifications();
+    window.addEventListener('native-push-received', onNativePush);
+    const appHandle = App.addListener('resume', () => fetchNotifications());
+
+    return () => {
+      window.removeEventListener('native-push-received', onNativePush);
+      appHandle.then((h) => h.remove());
+    };
+  }, [currentUserId, fetchNotifications]);
 
   const markAllRead = useCallback(async () => {
     if (!currentUserId) return;
