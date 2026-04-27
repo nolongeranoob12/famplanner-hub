@@ -8,11 +8,13 @@ import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { activityConfig, uploadActivityPhoto, type ActivityType } from '@/lib/activities';
 import { getDisplayAvatar, type Profile } from '@/lib/profiles';
+import { captureNativePhoto } from '@/lib/nativePhoto';
 import { MemberAvatar } from '@/components/MemberAvatar';
 import { Plus, CalendarIcon, X, ImagePlus, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
+import { Capacitor } from '@capacitor/core';
 
 interface AddActivityFormProps {
   onAdd: (data: { type: ActivityType; description: string; activity_date?: string; time_start?: string; time_end?: string; image_url?: string; member_name: string }) => void;
@@ -31,6 +33,7 @@ export function AddActivityForm({ onAdd, currentUserId, profiles }: AddActivityF
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [photoBusy, setPhotoBusy] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const me = getDisplayAvatar(currentUserId, profiles);
@@ -45,6 +48,7 @@ export function AddActivityForm({ onAdd, currentUserId, profiles }: AddActivityF
         if (fileInputRef.current) fileInputRef.current.value = '';
         return;
       }
+      if (imagePreview) URL.revokeObjectURL(imagePreview);
       setImageFile(file);
       setImagePreview(URL.createObjectURL(file));
     } catch (err) {
@@ -52,6 +56,32 @@ export function AddActivityForm({ onAdd, currentUserId, profiles }: AddActivityF
       toast.error('Could not access photo. Please check camera & photo permissions in Settings.');
       if (fileInputRef.current) fileInputRef.current.value = '';
     }
+  };
+
+  const handleAddPhoto = async () => {
+    if (!Capacitor.isNativePlatform()) {
+      fileInputRef.current?.click();
+      return;
+    }
+
+    setPhotoBusy(true);
+    const result = await captureNativePhoto();
+    setPhotoBusy(false);
+
+    if (!result.ok) {
+      if (result.reason !== 'cancelled') toast.error(result.message);
+      return;
+    }
+
+    if (result.file.size > 5 * 1024 * 1024) {
+      URL.revokeObjectURL(result.previewUrl);
+      toast.error('Image must be under 5MB');
+      return;
+    }
+
+    if (imagePreview) URL.revokeObjectURL(imagePreview);
+    setImageFile(result.file);
+    setImagePreview(result.previewUrl);
   };
 
   const removeImage = () => {
@@ -184,18 +214,18 @@ export function AddActivityForm({ onAdd, currentUserId, profiles }: AddActivityF
 
             <div className="space-y-1.5">
               <label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">Photo</label>
-              <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleImageSelect} />
+              <input ref={fileInputRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={handleImageSelect} />
               {imagePreview ? (
                 <div className="relative rounded-lg overflow-hidden">
-                  <img src={imagePreview} alt="Preview" className="w-full h-40 object-cover rounded-lg" />
+                  <img src={imagePreview} alt="Preview" className="w-full max-h-[min(42dvh,22rem)] aspect-[4/3] object-cover rounded-lg" />
                   <button type="button" onClick={removeImage} className="absolute top-2 right-2 w-7 h-7 rounded-full bg-background/80 backdrop-blur-sm flex items-center justify-center text-foreground hover:bg-background transition-colors">
                     <X className="w-4 h-4" />
                   </button>
                 </div>
               ) : (
-                <button type="button" onClick={() => fileInputRef.current?.click()} className="w-full flex items-center gap-2 justify-center py-3 rounded-lg border border-dashed border-border text-muted-foreground hover:border-primary/40 hover:text-primary transition-colors text-sm">
-                  <ImagePlus className="w-4 h-4" />
-                  Add a photo
+                <button type="button" onClick={handleAddPhoto} disabled={photoBusy} className="w-full min-h-12 flex items-center gap-2 justify-center px-3 py-3 rounded-lg border border-dashed border-border text-muted-foreground hover:border-primary/40 hover:text-primary disabled:opacity-70 transition-colors text-sm">
+                  {photoBusy ? <Loader2 className="w-4 h-4 animate-spin" /> : <ImagePlus className="w-4 h-4" />}
+                  {photoBusy ? 'Opening photo…' : 'Add a photo'}
                 </button>
               )}
             </div>
