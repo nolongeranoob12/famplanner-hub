@@ -125,7 +125,7 @@ export default function Index() {
     });
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-dvh bg-background">
       <motion.header
         className="sticky top-0 z-10 bg-card/80 backdrop-blur-xl border-b border-border safe-px"
         style={{ paddingTop: 'env(safe-area-inset-top)' }}
