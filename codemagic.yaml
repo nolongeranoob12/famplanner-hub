@@ -8,7 +8,6 @@ workflows:
       cocoapods: default
       vars:
         BUNDLE_ID: "com.nolongeranoob12.famplannerhub"
-        BUILD_NUMBER: $(($(app-store-connect get-latest-build-number "com.nolongeranoob12.famplannerhub") + 1))
       ios_signing:
         distribution_type: app_store
         bundle_identifier: com.nolongeranoob12.famplannerhub
@@ -25,38 +24,20 @@ workflows:
           npx cap init "Family Connect Hub" "com.nolongeranoob12.famplannerhub" --web-dir=dist
           npx cap add ios
           npx cap sync ios
-          # Bundle ID is now set directly in capacitor.config.ts — no sed substitution needed.
-          cat ios/App/App/Info.plist | grep BundleIdentifier
-          /usr/libexec/PlistBuddy -c "Set :CFBundleVersion 3" ios/App/App/Info.plist
+          sed -i '' 's/app.lovable.chaufamily/com.nolongeranoob12.famplannerhub/g' ios/App/App.xcodeproj/project.pbxproj
+          sed -i '' 's/app.lovable.chaufamily/com.nolongeranoob12.famplannerhub/g' ios/App/App/Info.plist
+          /usr/libexec/PlistBuddy -c "Set :CFBundleVersion 4" ios/App/App/Info.plist
           /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString 1.0.1" ios/App/App/Info.plist
-          /usr/libexec/PlistBuddy -c "Set :CFBundleDisplayName 'Family Connect Hub'" ios/App/App/Info.plist || \
-            /usr/libexec/PlistBuddy -c "Add :CFBundleDisplayName string 'Family Connect Hub'" ios/App/App/Info.plist
-          /usr/libexec/PlistBuddy -c "Set :CFBundleName 'Family Connect Hub'" ios/App/App/Info.plist || \
-            /usr/libexec/PlistBuddy -c "Add :CFBundleName string 'Family Connect Hub'" ios/App/App/Info.plist
-          # Required iOS privacy permissions — iPad crashes (TCC SIGABRT) when tapping a file input without these.
-          # Strategy: Delete the key first (ignore error if missing), then Add. This guarantees the final value is set.
-          PLIST="ios/App/App/Info.plist"
-          set_plist_string() {
-            local key="$1"; local value="$2"
-            /usr/libexec/PlistBuddy -c "Delete :$key" "$PLIST" 2>/dev/null || true
-            /usr/libexec/PlistBuddy -c "Add :$key string $value" "$PLIST"
-          }
-          set_plist_string "NSCameraUsageDescription"        "This app needs access to the camera to attach photos to family activities."
-          set_plist_string "NSPhotoLibraryUsageDescription"  "This app needs access to your photo library to attach photos to family activities."
-          set_plist_string "NSPhotoLibraryAddUsageDescription" "This app needs permission to save photos to your photo library."
-          # Verify the keys were written — fail the build loudly if any are missing.
-          echo "── Verifying privacy keys in Info.plist ──"
-          /usr/libexec/PlistBuddy -c "Print :NSCameraUsageDescription"        "$PLIST" || { echo "❌ NSCameraUsageDescription missing"; exit 1; }
-          /usr/libexec/PlistBuddy -c "Print :NSPhotoLibraryUsageDescription"  "$PLIST" || { echo "❌ NSPhotoLibraryUsageDescription missing"; exit 1; }
-          /usr/libexec/PlistBuddy -c "Print :NSPhotoLibraryAddUsageDescription" "$PLIST" || { echo "❌ NSPhotoLibraryAddUsageDescription missing"; exit 1; }
-          echo "✅ All privacy keys present"
+          /usr/libexec/PlistBuddy -c "Set :CFBundleDisplayName Family Connect Hub" ios/App/App/Info.plist
+          /usr/libexec/PlistBuddy -c "Set :CFBundleName Family Connect Hub" ios/App/App/Info.plist
+          /usr/libexec/PlistBuddy -c "Add :NSCameraUsageDescription string 'This app needs camera access to submit family photos'" ios/App/App/Info.plist
+          /usr/libexec/PlistBuddy -c "Add :NSPhotoLibraryUsageDescription string 'This app needs photo library access to submit family photos'" ios/App/App/Info.plist
+          /usr/libexec/PlistBuddy -c "Add :NSPhotoLibraryAddUsageDescription string 'This app needs photo library access to save family photos'" ios/App/App/Info.plist
       - name: Install App Icon
         script: |
-          ICON_DIR="ios/App/App/Assets.xcassets/AppIcon.appiconset"
-          mkdir -p "$ICON_DIR"
-          cp ios-assets/AppIcon-1024.png "$ICON_DIR/AppIcon-1024.png"
-          cp ios-assets/Contents.json "$ICON_DIR/Contents.json"
-          ls -la "$ICON_DIR"
+          mkdir -p ios/App/App/Assets.xcassets/AppIcon.appiconset
+          cp ios-assets/AppIcon-1024.png ios/App/App/Assets.xcassets/AppIcon.appiconset/AppIcon-1024.png
+          cp ios-assets/Contents.json ios/App/App/Assets.xcassets/AppIcon.appiconset/Contents.json
       - name: Install CocoaPods
         script: |
           cd ios/App
@@ -67,7 +48,7 @@ workflows:
           xcode-project use-profiles
           xcode-project build-ipa \
             --workspace ios/App/App.xcworkspace \
-            --scheme App \
+            --scheme App
     artifacts:
       - build/ios/ipa/*.ipa
     publishing:
