@@ -83,12 +83,29 @@
     @apply border-border;
   }
 
+  html, body, #root {
+    min-height: 100vh;
+    /* Full dynamic viewport on iOS — fills under Dynamic Island / home indicator */
+    min-height: 100dvh;
+  }
+
   body {
     @apply bg-background text-foreground antialiased;
     font-family: var(--font-body);
+    /* Respect iOS safe areas */
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+    overscroll-behavior-y: none;
   }
 
   h1, h2, h3, h4 {
     font-family: var(--font-heading);
   }
+}
+
+@layer utilities {
+  .safe-pt { padding-top: env(safe-area-inset-top); }
+  .safe-pb { padding-bottom: env(safe-area-inset-bottom); }
 }
