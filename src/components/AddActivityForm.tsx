@@ -68,7 +68,7 @@ export function AddActivityForm({ onAdd, currentUserId, profiles }: AddActivityF
     const result = await captureNativePhoto();
     setPhotoBusy(false);
 
-    if (!result.ok) {
+    if (result.ok === false) {
       if (result.reason !== 'cancelled') toast.error(result.message);
       return;
     }
