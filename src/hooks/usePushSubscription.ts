@@ -142,7 +142,9 @@ export function usePushSubscription(currentUserId: string | null, displayName: s
           return;
         }
         setSubscribed(false);
-        if (Notification.permission === 'granted' || Notification.permission === 'default') {
+        // Auto-prompt: if not yet decided, immediately request permission
+        // and subscribe so the user doesn't have to tap a button.
+        if (Notification.permission === 'default' || Notification.permission === 'granted') {
           const result = await doSubscribe();
           if (!result.ok && !cancelled) setSubscribed(false);
         }

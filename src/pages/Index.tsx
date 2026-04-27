@@ -13,6 +13,7 @@ import { getFamilyProfiles, getDisplayAvatar, type Profile } from '@/lib/profile
 import { getMyFamily, type Family } from '@/lib/families';
 import { useActivityNotifications } from '@/hooks/useActivityNotifications';
 import { usePushSubscription } from '@/hooks/usePushSubscription';
+import { useNativePush } from '@/hooks/useNativePush';
 import { NotificationBell } from '@/components/NotificationBell';
 import { useAuth } from '@/contexts/AuthContext';
 import { Users, Pencil } from 'lucide-react';
@@ -40,6 +41,7 @@ export default function Index() {
 
   useActivityNotifications(currentUserId);
   const pushSubscription = usePushSubscription(currentUserId, displayName);
+  useNativePush(currentUserId, displayName);
 
   const fetchProfiles = useCallback(async () => {
     try {
