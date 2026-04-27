@@ -302,32 +302,41 @@ export type Database = {
       push_subscriptions: {
         Row: {
           auth: string
+          bundle_id: string | null
           created_at: string
+          device_token: string | null
           endpoint: string
           family_id: string | null
           id: string
           member_name: string
           p256dh: string
+          platform: string
           user_id: string | null
         }
         Insert: {
           auth: string
+          bundle_id?: string | null
           created_at?: string
+          device_token?: string | null
           endpoint: string
           family_id?: string | null
           id?: string
           member_name: string
           p256dh: string
+          platform?: string
           user_id?: string | null
         }
         Update: {
           auth?: string
+          bundle_id?: string | null
           created_at?: string
+          device_token?: string | null
           endpoint?: string
           family_id?: string | null
           id?: string
           member_name?: string
           p256dh?: string
+          platform?: string
           user_id?: string | null
         }
         Relationships: [

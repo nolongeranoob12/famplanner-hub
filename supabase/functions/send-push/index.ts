@@ -124,6 +124,71 @@ async function createVapidAuthHeader(endpoint: string, publicKeyB64: string, pri
 
 // ── Main handler ────────────────────────────────────────────────────
 
+function normalizeApnsKey(raw: string) {
+  return raw.replace(/\\n/g, "\n").trim();
+}
+
+function pemToArrayBuffer(pem: string): ArrayBuffer {
+  const b64 = normalizeApnsKey(pem)
+    .replace("-----BEGIN PRIVATE KEY-----", "")
+    .replace("-----END PRIVATE KEY-----", "")
+    .replace(/\s/g, "");
+  return base64UrlToUint8Array(b64).buffer;
+}
+
+function ecdsaSignatureToJwt(sig: Uint8Array): Uint8Array {
+  if (sig.length === 64) return sig;
+  let offset = 2;
+  const rLen = sig[offset + 1];
+  const r = sig.slice(offset + 2, offset + 2 + rLen);
+  offset = offset + 2 + rLen;
+  const sLen = sig[offset + 1];
+  const s = sig.slice(offset + 2, offset + 2 + sLen);
+  const raw = new Uint8Array(64);
+  raw.set(r.length > 32 ? r.slice(r.length - 32) : r, 32 - Math.min(r.length, 32));
+  raw.set(s.length > 32 ? s.slice(s.length - 32) : s, 64 - Math.min(s.length, 32));
+  return raw;
+}
+
+async function createApnsJwt(teamId: string, keyId: string, privateKey: string) {
+  const key = await crypto.subtle.importKey(
+    "pkcs8",
+    pemToArrayBuffer(privateKey),
+    { name: "ECDSA", namedCurve: "P-256" },
+    false,
+    ["sign"],
+  );
+  const now = Math.floor(Date.now() / 1000);
+  const enc = new TextEncoder();
+  const header = uint8ToBase64Url(enc.encode(JSON.stringify({ alg: "ES256", kid: keyId })));
+  const payload = uint8ToBase64Url(enc.encode(JSON.stringify({ iss: teamId, iat: now })));
+  const unsigned = `${header}.${payload}`;
+  const sig = await crypto.subtle.sign({ name: "ECDSA", hash: "SHA-256" }, key, enc.encode(unsigned));
+  return `${unsigned}.${uint8ToBase64Url(ecdsaSignatureToJwt(new Uint8Array(sig)))}`;
+}
+
+async function sendApnsPush(args: { token: string; title: string; body: string; badge: number; bundleId: string; jwt: string }) {
+  const res = await fetch(`https://api.push.apple.com/3/device/${args.token}`, {
+    method: "POST",
+    headers: {
+      authorization: `bearer ${args.jwt}`,
+      "apns-topic": args.bundleId,
+      "apns-push-type": "alert",
+      "apns-priority": "10",
+      "content-type": "application/json",
+    },
+    body: JSON.stringify({
+      aps: {
+        alert: { title: args.title, body: args.body },
+        sound: "default",
+        badge: args.badge,
+      },
+      url: "/",
+    }),
+  });
+  return res;
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -136,6 +201,10 @@ Deno.serve(async (req) => {
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const vapidPublic = Deno.env.get("VAPID_PUBLIC_KEY")!;
     const vapidPrivate = Deno.env.get("VAPID_PRIVATE_KEY")!;
+    const apnsKeyId = Deno.env.get("APNS_KEY_ID");
+    const apnsTeamId = Deno.env.get("APNS_TEAM_ID");
+    const apnsPrivateKey = Deno.env.get("APNS_PRIVATE_KEY");
+    const defaultBundleId = Deno.env.get("APNS_BUNDLE_ID") ?? "com.nolongeranoob12.famplannerhub";
 
     const supabase = createClient(supabaseUrl, serviceRoleKey);
 
@@ -166,6 +235,29 @@ Deno.serve(async (req) => {
 
     const results = await Promise.allSettled(
       (subs ?? []).map(async (sub: any) => {
+        if (sub.platform === "ios" || sub.endpoint?.startsWith("apns://") || sub.device_token) {
+          if (!apnsKeyId || !apnsTeamId || !apnsPrivateKey) {
+            console.log(`Skipping native push for ${sub.user_id}: APNs secrets not configured`);
+            return { endpoint: sub.endpoint, status: 0, skipped: "missing-apns-secrets" };
+          }
+
+          const jwt = await createApnsJwt(apnsTeamId, apnsKeyId, apnsPrivateKey);
+          const badge = unreadCounts.get(sub.user_id) ?? 1;
+          const res = await sendApnsPush({
+            token: sub.device_token ?? String(sub.endpoint).replace("apns://", ""),
+            title,
+            body,
+            badge,
+            bundleId: sub.bundle_id ?? defaultBundleId,
+            jwt,
+          });
+          console.log(`APNs push to user ${sub.user_id}: status ${res.status}`);
+          if (res.status === 400 || res.status === 410) {
+            await supabase.from("push_subscriptions").delete().eq("id", sub.id);
+          }
+          return { endpoint: sub.endpoint, status: res.status };
+        }
+
         const vapidHeaders = await createVapidAuthHeader(sub.endpoint, vapidPublic, vapidPrivate);
 
         const payloadBytes = new TextEncoder().encode(JSON.stringify({

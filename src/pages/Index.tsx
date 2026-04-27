@@ -21,6 +21,7 @@ import { PullToRefresh } from '@/components/PullToRefresh';
 import { MemberFilterChips } from '@/components/MemberFilterChips';
 import { ShoppingList } from '@/components/ShoppingList';
 import { haptic } from '@/lib/haptics';
+import { Capacitor } from '@capacitor/core';
 import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -40,8 +41,9 @@ export default function Index() {
   const [editingAvatar, setEditingAvatar] = useState(false);
 
   useActivityNotifications(currentUserId);
-  const pushSubscription = usePushSubscription(currentUserId, displayName);
-  useNativePush(currentUserId, displayName);
+  const webPushSubscription = usePushSubscription(currentUserId, displayName);
+  const nativePushSubscription = useNativePush(currentUserId, displayName);
+  const pushSubscription = Capacitor.isNativePlatform() ? nativePushSubscription : webPushSubscription;
 
   const fetchProfiles = useCallback(async () => {
     try {
