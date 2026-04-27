@@ -80,7 +80,7 @@ export default function Auth() {
   };
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-6">
+    <div className="min-h-dvh bg-background flex items-center justify-center p-6 safe-pt safe-pb safe-px">
       <motion.div
         className="w-full max-w-sm space-y-7"
         initial={{ opacity: 0, y: 20 }}

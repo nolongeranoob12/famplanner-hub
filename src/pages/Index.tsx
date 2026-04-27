@@ -125,22 +125,23 @@ export default function Index() {
     });
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-dvh bg-background">
       <motion.header
-        className="sticky top-0 z-10 bg-card/80 backdrop-blur-xl border-b border-border"
+        className="sticky top-0 z-10 bg-card/80 backdrop-blur-xl border-b border-border safe-px"
+        style={{ paddingTop: 'env(safe-area-inset-top)' }}
         initial={{ y: -60 }}
         animate={{ y: 0 }}
         transition={{ type: 'spring', stiffness: 300, damping: 30 }}
       >
-        <div className="max-w-xl mx-auto px-4 py-3 flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center shadow-sm">
+        <div className="max-w-2xl mx-auto px-4 py-3 flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center shadow-sm shrink-0">
             <Users className="w-5 h-5 text-primary-foreground" />
           </div>
           <div className="flex-1 min-w-0">
             <h1 className="text-lg font-bold text-foreground leading-tight tracking-tight truncate">{family?.name ?? 'Family'}</h1>
             <p className="text-[11px] text-muted-foreground">Family activity board</p>
           </div>
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-1.5 shrink-0">
             <button onClick={() => setEditingAvatar(true)} className="relative" title="Edit avatar">
               <MemberAvatar emoji={avatar.emoji} color={avatar.color} avatarUrl={avatar.avatarUrl} size="sm" isActive={userIsActive} />
               <span className="absolute -bottom-1 -right-1 w-3.5 h-3.5 rounded-full bg-primary text-primary-foreground flex items-center justify-center">
@@ -161,7 +162,7 @@ export default function Index() {
 
       <PullToRefresh onRefresh={handleRefresh}>
         <motion.main
-          className="max-w-xl mx-auto px-4 py-5 space-y-4"
+          className="max-w-2xl mx-auto px-4 py-5 space-y-4 safe-px pb-safe-5"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.15, duration: 0.4 }}
