@@ -62,8 +62,9 @@ workflows:
           xcode-project build-ipa \
             --workspace ios/App/App.xcworkspace \
             --scheme App
+          mv "build/ios/ipa/Family Connect Hub.ipa" "build/ios/ipa/FamilyConnectHub.ipa"
     artifacts:
-      - build/ios/ipa/*.ipa
+      - build/ios/ipa/FamilyConnectHub.ipa
     publishing:
       app_store_connect:
         auth: integration
