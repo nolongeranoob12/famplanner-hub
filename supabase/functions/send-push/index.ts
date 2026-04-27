@@ -1,5 +1,4 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { SignJWT, importPKCS8 } from "https://esm.sh/jose@6.2.3";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -129,14 +128,43 @@ function normalizeApnsKey(raw: string) {
   return raw.replace(/\\n/g, "\n").trim();
 }
 
+function pemToArrayBuffer(pem: string): ArrayBuffer {
+  const b64 = normalizeApnsKey(pem)
+    .replace("-----BEGIN PRIVATE KEY-----", "")
+    .replace("-----END PRIVATE KEY-----", "")
+    .replace(/\s/g, "");
+  return base64UrlToUint8Array(b64).buffer;
+}
+
+function ecdsaSignatureToJwt(sig: Uint8Array): Uint8Array {
+  if (sig.length === 64) return sig;
+  let offset = 2;
+  const rLen = sig[offset + 1];
+  const r = sig.slice(offset + 2, offset + 2 + rLen);
+  offset = offset + 2 + rLen;
+  const sLen = sig[offset + 1];
+  const s = sig.slice(offset + 2, offset + 2 + sLen);
+  const raw = new Uint8Array(64);
+  raw.set(r.length > 32 ? r.slice(r.length - 32) : r, 32 - Math.min(r.length, 32));
+  raw.set(s.length > 32 ? s.slice(s.length - 32) : s, 64 - Math.min(s.length, 32));
+  return raw;
+}
+
 async function createApnsJwt(teamId: string, keyId: string, privateKey: string) {
-  const key = await importPKCS8(normalizeApnsKey(privateKey), "ES256");
-  return new SignJWT({})
-    .setProtectedHeader({ alg: "ES256", kid: keyId })
-    .setIssuer(teamId)
-    .setIssuedAt()
-    .setExpirationTime("50m")
-    .sign(key);
+  const key = await crypto.subtle.importKey(
+    "pkcs8",
+    pemToArrayBuffer(privateKey),
+    { name: "ECDSA", namedCurve: "P-256" },
+    false,
+    ["sign"],
+  );
+  const now = Math.floor(Date.now() / 1000);
+  const enc = new TextEncoder();
+  const header = uint8ToBase64Url(enc.encode(JSON.stringify({ alg: "ES256", kid: keyId })));
+  const payload = uint8ToBase64Url(enc.encode(JSON.stringify({ iss: teamId, iat: now })));
+  const unsigned = `${header}.${payload}`;
+  const sig = await crypto.subtle.sign({ name: "ECDSA", hash: "SHA-256" }, key, enc.encode(unsigned));
+  return `${unsigned}.${uint8ToBase64Url(ecdsaSignatureToJwt(new Uint8Array(sig)))}`;
 }
 
 async function sendApnsPush(args: { token: string; title: string; body: string; badge: number; bundleId: string; jwt: string }) {
