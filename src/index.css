@@ -87,17 +87,26 @@
     min-height: 100vh;
     /* Full dynamic viewport on iOS — fills under Dynamic Island / home indicator */
     min-height: 100dvh;
+    width: 100%;
+  }
+
+  html {
+    /* Prevent horizontal scroll on large iPhones in landscape */
+    overflow-x: hidden;
   }
 
   body {
     @apply bg-background text-foreground antialiased;
     font-family: var(--font-body);
-    /* Respect iOS safe areas */
-    padding-top: env(safe-area-inset-top);
-    padding-bottom: env(safe-area-inset-bottom);
-    padding-left: env(safe-area-inset-left);
-    padding-right: env(safe-area-inset-right);
     overscroll-behavior-y: none;
+    /* Edge-to-edge: safe areas are handled per-component (header, main, modals)
+       so backgrounds/blurs extend under the Dynamic Island and home indicator. */
+  }
+
+  #root {
+    /* Allow children to read safe-area insets directly */
+    display: flex;
+    flex-direction: column;
   }
 
   h1, h2, h3, h4 {
@@ -108,4 +117,15 @@
 @layer utilities {
   .safe-pt { padding-top: env(safe-area-inset-top); }
   .safe-pb { padding-bottom: env(safe-area-inset-bottom); }
+  .safe-pl { padding-left: env(safe-area-inset-left); }
+  .safe-pr { padding-right: env(safe-area-inset-right); }
+  .safe-px {
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+  }
+  /* Use min-h-dvh wherever min-h-screen is used for proper iOS sizing */
+  .min-h-dvh { min-height: 100dvh; }
+  /* Header offset: sit below Dynamic Island */
+  .pt-safe-3 { padding-top: calc(env(safe-area-inset-top) + 0.75rem); }
+  .pb-safe-5 { padding-bottom: calc(env(safe-area-inset-bottom) + 1.25rem); }
 }
