@@ -61,7 +61,7 @@ export default function Onboarding() {
   };
 
   return (
-    <div className="min-h-dvh bg-background flex items-center justify-center p-6">
+    <div className="min-h-dvh bg-background flex items-center justify-center p-6 safe-pt safe-pb safe-px">
       <motion.div
         className="w-full max-w-sm space-y-5"
         initial={{ opacity: 0, y: 16 }}
