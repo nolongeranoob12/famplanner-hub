@@ -6,7 +6,9 @@ import { supabase } from '@/integrations/supabase/client';
 
 export type NativePushReason =
   | 'no-user'
+  | 'no-family'
   | 'unsupported'
+  | 'permission-pending'
   | 'blocked'
   | 'subscribe-failed'
   | 'register-timeout';
@@ -21,20 +23,28 @@ export type NativePushResult =
  * Auto-requests permission at app launch and stores the device APNs/FCM token
  * so the backend can deliver real background/closed-app notifications.
  */
-export function useNativePush(currentUserId: string | null, displayName: string) {
+export function useNativePush(currentUserId: string | null, displayName: string, familyId: string | null) {
   const [subscribed, setSubscribed] = useState<boolean | null>(
     Capacitor.isNativePlatform() ? null : false
   );
   const [lastError, setLastError] = useState<string | null>(null);
   const tokenResolverRef = useRef<((ok: boolean) => void) | null>(null);
+  const listenersReadyRef = useRef(false);
 
-  const register = useCallback(async (): Promise<NativePushResult> => {
+  const register = useCallback(async (options: { requestPermission?: boolean } = {}): Promise<NativePushResult> => {
     if (!currentUserId) return { ok: false, reason: 'no-user' };
+    if (!familyId) return { ok: false, reason: 'no-family' };
     if (!Capacitor.isNativePlatform()) return { ok: false, reason: 'unsupported' };
 
     try {
+      const requestPermission = options.requestPermission ?? true;
       let perm = await PushNotifications.checkPermissions();
       if (perm.receive === 'prompt' || perm.receive === 'prompt-with-rationale') {
+        if (!requestPermission) {
+          setSubscribed(false);
+          setLastError(null);
+          return { ok: false, reason: 'permission-pending' };
+        }
         perm = await PushNotifications.requestPermissions();
       }
 
@@ -44,6 +54,10 @@ export function useNativePush(currentUserId: string | null, displayName: string)
         setSubscribed(false);
         setLastError('Permission denied. Enable notifications for this app in iOS Settings.');
         return { ok: false, reason: 'blocked' };
+      }
+
+      if (!listenersReadyRef.current) {
+        await new Promise((resolve) => setTimeout(resolve, 250));
       }
 
       // Wait for the 'registration' listener to actually save the token
@@ -77,7 +91,7 @@ export function useNativePush(currentUserId: string | null, displayName: string)
       setLastError(detail);
       return { ok: false, reason: 'subscribe-failed', detail };
     }
-  }, [currentUserId]);
+  }, [currentUserId, familyId]);
 
   useEffect(() => {
     if (!currentUserId || !Capacitor.isNativePlatform()) return;
