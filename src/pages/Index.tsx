@@ -43,7 +43,7 @@ export default function Index() {
 
   useActivityNotifications(currentUserId);
   const webPushSubscription = usePushSubscription(currentUserId, displayName);
-  const nativePushSubscription = useNativePush(currentUserId, displayName);
+  const nativePushSubscription = useNativePush(currentUserId, displayName, profile?.family_id ?? null);
   const pushSubscription = Capacitor.isNativePlatform() ? nativePushSubscription : webPushSubscription;
 
   const fetchProfiles = useCallback(async () => {
