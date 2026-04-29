@@ -37,8 +37,9 @@ export function NotificationBell({ currentUserId, pushSubscribed, onEnablePush, 
 
   const handleEnablePush = async () => {
     const result = await onEnablePush();
-    if (result.ok) { toast.success('Phone notifications are now on.'); return; }
-    const msg = friendlyReason[result.reason] ?? result.detail ?? 'Could not enable notifications.';
+    if (result.ok === true) { toast.success('Phone notifications are now on.'); return; }
+    const r = result as { ok: false; reason: string; detail?: string };
+    const msg = friendlyReason[r.reason] ?? r.detail ?? 'Could not enable notifications.';
     toast.error(msg);
   };
 

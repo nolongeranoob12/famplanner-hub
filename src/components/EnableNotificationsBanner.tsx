@@ -29,16 +29,17 @@ export function EnableNotificationsBanner({ subscribed, onEnable, lastError }: P
     setBusy(true);
     const result = await onEnable();
     setBusy(false);
-    if (result.ok) {
+    if (result.ok === true) {
       toast.success('Notifications enabled — you’ll get banners on your lock screen.');
       return;
     }
-    if (result.reason === 'blocked') {
+    const r = result as Exclude<NativePushResult, { ok: true }>;
+    if (r.reason === 'blocked') {
       toast.error('Notifications blocked. Open iOS Settings → famplanner-hub → Notifications → Allow.');
-    } else if (result.reason === 'register-timeout') {
+    } else if (r.reason === 'register-timeout') {
       toast.error('iOS didn’t return a push token. Push Notifications capability may be missing in Xcode.');
     } else {
-      toast.error(result.detail ?? 'Could not enable notifications.');
+      toast.error(r.detail ?? 'Could not enable notifications.');
     }
   };
 
