@@ -3,8 +3,10 @@ import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, RefreshCw, CheckCircle2, XCircle, AlertCircle } from 'lucide-react';
+import { ArrowLeft, RefreshCw, CheckCircle2, XCircle, AlertCircle, Send } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '@/contexts/AuthContext';
+import { toast } from 'sonner';
 
 function StatusIcon({ ok }: { ok: boolean | null }) {
   if (ok === null) return <AlertCircle className="w-4 h-4 text-muted-foreground" />;
@@ -13,9 +15,11 @@ function StatusIcon({ ok }: { ok: boolean | null }) {
 
 export default function Debug() {
   const navigate = useNavigate();
-  const currentUser = null; // legacy: identity now via auth
+  const { user, profile } = useAuth();
+  const currentUser = user?.id ?? null;
   const [info, setInfo] = useState<Record<string, any>>({});
   const [loading, setLoading] = useState(true);
+  const [sending, setSending] = useState(false);
 
   const gather = async () => {
     setLoading(true);
@@ -49,17 +53,18 @@ export default function Debug() {
       }
     }
 
-    // DB subscription record
+    // DB subscription record (filter by current user id)
     if (currentUser) {
       const { data, error } = await supabase
         .from('push_subscriptions')
-        .select('endpoint, created_at')
-        .eq('member_name', currentUser)
+        .select('endpoint, platform, device_token, created_at')
+        .eq('user_id', currentUser)
         .limit(5);
       result.dbSubscriptions = data?.length ?? 0;
       result.dbSubError = error?.message;
       if (data?.[0]) {
         result.dbSubEndpoint = data[0].endpoint?.substring(0, 80);
+        result.dbSubPlatform = data[0].platform;
         result.dbSubCreated = data[0].created_at;
       }
     }
@@ -69,7 +74,7 @@ export default function Debug() {
       const { data } = await supabase
         .from('notifications')
         .select('id, is_read, created_at, activity_log(member_name, action, description)')
-        .eq('member_name', currentUser)
+        .eq('user_id', currentUser)
         .order('created_at', { ascending: false })
         .limit(5);
       result.recentNotifications = data ?? [];
