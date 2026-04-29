@@ -20,6 +20,7 @@ import { Users, Pencil } from 'lucide-react';
 import { PullToRefresh } from '@/components/PullToRefresh';
 import { MemberFilterChips } from '@/components/MemberFilterChips';
 import { ShoppingList } from '@/components/ShoppingList';
+import { EnableNotificationsBanner } from '@/components/EnableNotificationsBanner';
 import { haptic } from '@/lib/haptics';
 import { Capacitor } from '@capacitor/core';
 import { toast } from 'sonner';
@@ -169,6 +170,14 @@ export default function Index() {
           animate={{ opacity: 1 }}
           transition={{ delay: 0.15, duration: 0.4 }}
         >
+          {Capacitor.isNativePlatform() && (
+            <EnableNotificationsBanner
+              subscribed={nativePushSubscription.subscribed}
+              onEnable={nativePushSubscription.subscribe}
+              lastError={nativePushSubscription.lastError}
+            />
+          )}
+
           <AddActivityForm onAdd={handleAdd} currentUserId={currentUserId} profiles={profiles} />
 
           <MemberFilterChips
