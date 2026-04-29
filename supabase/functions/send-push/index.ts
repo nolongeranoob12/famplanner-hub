@@ -195,7 +195,7 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { title, body, family_id, exclude_user_id } = await req.json();
+    const { title, body, family_id, exclude_user_id, platform } = await req.json();
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -212,6 +212,7 @@ Deno.serve(async (req) => {
     let query = supabase.from("push_subscriptions").select("*");
     if (family_id) query = query.eq("family_id", family_id);
     if (exclude_user_id) query = query.neq("user_id", exclude_user_id);
+    if (platform === "ios") query = query.eq("platform", "ios").not("device_token", "is", null);
 
     const { data: subs, error } = await query;
     if (error) throw error;
