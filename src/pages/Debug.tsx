@@ -100,8 +100,32 @@ export default function Debug() {
     { label: 'Push Subscribed', value: String(info.pushSubscribed), ok: info.pushSubscribed },
     { label: 'Badge API', value: info.badgeSupported ? 'Supported' : 'Not supported', ok: info.badgeSupported },
     { label: 'DB Subscriptions', value: String(info.dbSubscriptions ?? '—'), ok: (info.dbSubscriptions ?? 0) > 0 },
+    { label: 'DB Sub Platform', value: info.dbSubPlatform ?? '—' },
     { label: 'Unread Count', value: String(info.unreadCount ?? 0) },
   ];
+
+  const sendTestPush = async () => {
+    if (!profile?.family_id) {
+      toast.error('You must be in a family to test push.');
+      return;
+    }
+    setSending(true);
+    try {
+      const { error } = await supabase.functions.invoke('send-push', {
+        body: {
+          title: '🔔 Test push',
+          body: 'If you see this on your lock screen, push notifications are working!',
+          family_id: profile.family_id,
+        },
+      });
+      if (error) throw error;
+      toast.success('Test push sent. Lock your phone to see the banner.');
+    } catch (e: any) {
+      toast.error(`Send failed: ${e?.message ?? String(e)}`);
+    } finally {
+      setSending(false);
+    }
+  };
 
   return (
     <div className="min-h-dvh bg-background">
@@ -119,6 +143,21 @@ export default function Debug() {
       </header>
 
       <main className="max-w-xl mx-auto px-4 py-5 space-y-4">
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-semibold">Send test push to my family</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-xs text-muted-foreground mb-3">
+              Sends a real push to every device subscribed in your family (including yours, if registered). Lock your phone first to see if the banner appears.
+            </p>
+            <Button onClick={sendTestPush} disabled={sending} className="w-full">
+              <Send className="w-3.5 h-3.5 mr-1.5" />
+              {sending ? 'Sending…' : 'Send test push'}
+            </Button>
+          </CardContent>
+        </Card>
+
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-sm font-semibold">System Status</CardTitle>
