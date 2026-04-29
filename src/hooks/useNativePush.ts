@@ -94,18 +94,20 @@ export function useNativePush(currentUserId: string | null, displayName: string,
   }, [currentUserId, familyId]);
 
   useEffect(() => {
-    if (!currentUserId || !Capacitor.isNativePlatform()) return;
+    if (!currentUserId || !familyId || !Capacitor.isNativePlatform()) return;
 
     let mounted = true;
-    register();
+    let handles: Array<{ remove: () => Promise<void> }> = [];
 
-    const regHandle = PushNotifications.addListener('registration', async (token) => {
+    const setup = async () => {
+      const regHandle = await PushNotifications.addListener('registration', async (token) => {
       if (!mounted) return;
       try {
-        const platform = Capacitor.getPlatform();
+        const platform = Capacitor.getPlatform() === 'ios' ? 'ios' : Capacitor.getPlatform();
         const { error } = await supabase.from('push_subscriptions').upsert(
           {
             user_id: currentUserId,
+            family_id: familyId,
             member_name: displayName,
             endpoint: `apns://${token.value}`,
             p256dh: 'native',
@@ -130,7 +132,7 @@ export function useNativePush(currentUserId: string | null, displayName: string,
       }
     });
 
-    const errHandle = PushNotifications.addListener('registrationError', (err) => {
+      const errHandle = await PushNotifications.addListener('registrationError', (err) => {
       console.error('[NativePush] registrationError', err);
       setSubscribed(false);
       setLastError(`APNs registration error: ${err?.error ?? 'unknown'}`);
@@ -138,26 +140,31 @@ export function useNativePush(currentUserId: string | null, displayName: string,
       tokenResolverRef.current = null;
     });
 
-    const receiveHandle = PushNotifications.addListener('pushNotificationReceived', (notification) => {
+      const receiveHandle = await PushNotifications.addListener('pushNotificationReceived', (notification) => {
       window.dispatchEvent(new CustomEvent('native-push-received'));
       if (typeof notification.badge === 'number') {
         Badge.set({ count: notification.badge }).catch(() => undefined);
       }
     });
 
-    const actionHandle = PushNotifications.addListener('pushNotificationActionPerformed', () => {
+      const actionHandle = await PushNotifications.addListener('pushNotificationActionPerformed', () => {
       window.dispatchEvent(new CustomEvent('native-push-received'));
       if (window.location.pathname !== '/') window.location.assign('/');
     });
 
+      handles = [regHandle, errHandle, receiveHandle, actionHandle];
+      listenersReadyRef.current = true;
+      await register({ requestPermission: false });
+    };
+
+    setup();
+
     return () => {
       mounted = false;
-      regHandle.then((h) => h.remove());
-      errHandle.then((h) => h.remove());
-      receiveHandle.then((h) => h.remove());
-      actionHandle.then((h) => h.remove());
+      listenersReadyRef.current = false;
+      handles.forEach((h) => h.remove());
     };
-  }, [currentUserId, displayName, register]);
+  }, [currentUserId, displayName, familyId, register]);
 
   return { subscribed, subscribe: register, lastError };
 }
