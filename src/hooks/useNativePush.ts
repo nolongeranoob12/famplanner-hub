@@ -1,8 +1,19 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Capacitor } from '@capacitor/core';
 import { PushNotifications } from '@capacitor/push-notifications';
 import { Badge } from '@capawesome/capacitor-badge';
 import { supabase } from '@/integrations/supabase/client';
+
+export type NativePushReason =
+  | 'no-user'
+  | 'unsupported'
+  | 'blocked'
+  | 'subscribe-failed'
+  | 'register-timeout';
+
+export type NativePushResult =
+  | { ok: true }
+  | { ok: false; reason: NativePushReason; detail?: string };
 
 /**
  * Native iOS/Android push registration via Capacitor.
@@ -11,11 +22,15 @@ import { supabase } from '@/integrations/supabase/client';
  * so the backend can deliver real background/closed-app notifications.
  */
 export function useNativePush(currentUserId: string | null, displayName: string) {
-  const [subscribed, setSubscribed] = useState<boolean | null>(Capacitor.isNativePlatform() ? null : false);
+  const [subscribed, setSubscribed] = useState<boolean | null>(
+    Capacitor.isNativePlatform() ? null : false
+  );
+  const [lastError, setLastError] = useState<string | null>(null);
+  const tokenResolverRef = useRef<((ok: boolean) => void) | null>(null);
 
-  const register = useCallback(async () => {
-    if (!currentUserId) return { ok: false as const, reason: 'no-user' as const };
-    if (!Capacitor.isNativePlatform()) return { ok: false as const, reason: 'unsupported' as const };
+  const register = useCallback(async (): Promise<NativePushResult> => {
+    if (!currentUserId) return { ok: false, reason: 'no-user' };
+    if (!Capacitor.isNativePlatform()) return { ok: false, reason: 'unsupported' };
 
     try {
       let perm = await PushNotifications.checkPermissions();
@@ -27,16 +42,40 @@ export function useNativePush(currentUserId: string | null, displayName: string)
 
       if (perm.receive !== 'granted') {
         setSubscribed(false);
-        return { ok: false as const, reason: 'blocked' as const };
+        setLastError('Permission denied. Enable notifications for this app in iOS Settings.');
+        return { ok: false, reason: 'blocked' };
       }
 
+      // Wait for the 'registration' listener to actually save the token
+      // (or for a timeout). This way the UI knows whether APNs returned a token.
+      const tokenSaved = new Promise<boolean>((resolve) => {
+        tokenResolverRef.current = resolve;
+        setTimeout(() => {
+          if (tokenResolverRef.current) {
+            tokenResolverRef.current = null;
+            resolve(false);
+          }
+        }, 10_000);
+      });
+
       await PushNotifications.register();
+      const ok = await tokenSaved;
+      if (!ok) {
+        setSubscribed(false);
+        setLastError(
+          'iOS did not return an APNs token. Most likely the app needs the Push Notifications capability enabled in Xcode (Signing & Capabilities → + Capability → Push Notifications).'
+        );
+        return { ok: false, reason: 'register-timeout' };
+      }
       setSubscribed(true);
-      return { ok: true as const };
+      setLastError(null);
+      return { ok: true };
     } catch (err) {
       console.error('[NativePush] register failed', err);
       setSubscribed(false);
-      return { ok: false as const, reason: 'subscribe-failed' as const, detail: (err as Error)?.message ?? String(err) };
+      const detail = (err as Error)?.message ?? String(err);
+      setLastError(detail);
+      return { ok: false, reason: 'subscribe-failed', detail };
     }
   }, [currentUserId]);
 
@@ -50,7 +89,7 @@ export function useNativePush(currentUserId: string | null, displayName: string)
       if (!mounted) return;
       try {
         const platform = Capacitor.getPlatform();
-        await supabase.from('push_subscriptions').upsert(
+        const { error } = await supabase.from('push_subscriptions').upsert(
           {
             user_id: currentUserId,
             member_name: displayName,
@@ -63,16 +102,26 @@ export function useNativePush(currentUserId: string | null, displayName: string)
           } as any,
           { onConflict: 'device_token' }
         );
+        if (error) throw error;
         setSubscribed(true);
+        setLastError(null);
+        tokenResolverRef.current?.(true);
+        tokenResolverRef.current = null;
       } catch (err) {
         console.error('[NativePush] save token failed', err);
         setSubscribed(false);
+        setLastError(`Saving token failed: ${(err as Error)?.message ?? String(err)}`);
+        tokenResolverRef.current?.(false);
+        tokenResolverRef.current = null;
       }
     });
 
     const errHandle = PushNotifications.addListener('registrationError', (err) => {
       console.error('[NativePush] registrationError', err);
       setSubscribed(false);
+      setLastError(`APNs registration error: ${err?.error ?? 'unknown'}`);
+      tokenResolverRef.current?.(false);
+      tokenResolverRef.current = null;
     });
 
     const receiveHandle = PushNotifications.addListener('pushNotificationReceived', (notification) => {
@@ -94,8 +143,7 @@ export function useNativePush(currentUserId: string | null, displayName: string)
       receiveHandle.then((h) => h.remove());
       actionHandle.then((h) => h.remove());
     };
-
   }, [currentUserId, displayName, register]);
 
-  return { subscribed, subscribe: register };
+  return { subscribed, subscribe: register, lastError };
 }

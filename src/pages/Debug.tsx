@@ -3,8 +3,10 @@ import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, RefreshCw, CheckCircle2, XCircle, AlertCircle } from 'lucide-react';
+import { ArrowLeft, RefreshCw, CheckCircle2, XCircle, AlertCircle, Send } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '@/contexts/AuthContext';
+import { toast } from 'sonner';
 
 function StatusIcon({ ok }: { ok: boolean | null }) {
   if (ok === null) return <AlertCircle className="w-4 h-4 text-muted-foreground" />;
@@ -13,9 +15,11 @@ function StatusIcon({ ok }: { ok: boolean | null }) {
 
 export default function Debug() {
   const navigate = useNavigate();
-  const currentUser = null; // legacy: identity now via auth
+  const { user, profile } = useAuth();
+  const currentUser = user?.id ?? null;
   const [info, setInfo] = useState<Record<string, any>>({});
   const [loading, setLoading] = useState(true);
+  const [sending, setSending] = useState(false);
 
   const gather = async () => {
     setLoading(true);
@@ -49,17 +53,18 @@ export default function Debug() {
       }
     }
 
-    // DB subscription record
+    // DB subscription record (filter by current user id)
     if (currentUser) {
       const { data, error } = await supabase
         .from('push_subscriptions')
-        .select('endpoint, created_at')
-        .eq('member_name', currentUser)
+        .select('endpoint, platform, device_token, created_at')
+        .eq('user_id', currentUser)
         .limit(5);
       result.dbSubscriptions = data?.length ?? 0;
       result.dbSubError = error?.message;
       if (data?.[0]) {
         result.dbSubEndpoint = data[0].endpoint?.substring(0, 80);
+        result.dbSubPlatform = data[0].platform;
         result.dbSubCreated = data[0].created_at;
       }
     }
@@ -69,7 +74,7 @@ export default function Debug() {
       const { data } = await supabase
         .from('notifications')
         .select('id, is_read, created_at, activity_log(member_name, action, description)')
-        .eq('member_name', currentUser)
+        .eq('user_id', currentUser)
         .order('created_at', { ascending: false })
         .limit(5);
       result.recentNotifications = data ?? [];
@@ -95,8 +100,32 @@ export default function Debug() {
     { label: 'Push Subscribed', value: String(info.pushSubscribed), ok: info.pushSubscribed },
     { label: 'Badge API', value: info.badgeSupported ? 'Supported' : 'Not supported', ok: info.badgeSupported },
     { label: 'DB Subscriptions', value: String(info.dbSubscriptions ?? '—'), ok: (info.dbSubscriptions ?? 0) > 0 },
+    { label: 'DB Sub Platform', value: info.dbSubPlatform ?? '—' },
     { label: 'Unread Count', value: String(info.unreadCount ?? 0) },
   ];
+
+  const sendTestPush = async () => {
+    if (!profile?.family_id) {
+      toast.error('You must be in a family to test push.');
+      return;
+    }
+    setSending(true);
+    try {
+      const { error } = await supabase.functions.invoke('send-push', {
+        body: {
+          title: '🔔 Test push',
+          body: 'If you see this on your lock screen, push notifications are working!',
+          family_id: profile.family_id,
+        },
+      });
+      if (error) throw error;
+      toast.success('Test push sent. Lock your phone to see the banner.');
+    } catch (e: any) {
+      toast.error(`Send failed: ${e?.message ?? String(e)}`);
+    } finally {
+      setSending(false);
+    }
+  };
 
   return (
     <div className="min-h-dvh bg-background">
@@ -114,6 +143,21 @@ export default function Debug() {
       </header>
 
       <main className="max-w-xl mx-auto px-4 py-5 space-y-4">
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-semibold">Send test push to my family</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-xs text-muted-foreground mb-3">
+              Sends a real push to every device subscribed in your family (including yours, if registered). Lock your phone first to see if the banner appears.
+            </p>
+            <Button onClick={sendTestPush} disabled={sending} className="w-full">
+              <Send className="w-3.5 h-3.5 mr-1.5" />
+              {sending ? 'Sending…' : 'Send test push'}
+            </Button>
+          </CardContent>
+        </Card>
+
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-sm font-semibold">System Status</CardTitle>

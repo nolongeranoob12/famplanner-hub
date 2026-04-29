@@ -4,26 +4,30 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useNotifications } from '@/hooks/useNotifications';
-import type { SubscribeResult } from '@/hooks/usePushSubscription';
 import { getDisplayAvatar, type Profile } from '@/lib/profiles';
 import { formatDistanceToNow } from 'date-fns';
 import { toast } from 'sonner';
 
+type AnyEnableResult =
+  | { ok: true }
+  | { ok: false; reason: string; detail?: string };
+
 interface NotificationBellProps {
   currentUserId: string;
   pushSubscribed: boolean | null;
-  onEnablePush: () => Promise<SubscribeResult>;
+  onEnablePush: () => Promise<AnyEnableResult>;
   profiles: Record<string, Profile>;
 }
 
-const subscribeErrorMessage: Record<Exclude<SubscribeResult, { ok: true }>['reason'], string> = {
+const friendlyReason: Record<string, string> = {
   'no-user': 'Please sign in first.',
   'preview': 'Open the published app to turn on phone notifications.',
   'ios-home-screen': 'On iPhone, tap Share → "Add to Home Screen", then open from your Home Screen.',
   'unsupported': 'This device/browser does not support background notifications here.',
-  'blocked': 'Notifications are blocked. Please allow them in your browser settings.',
+  'blocked': 'Notifications are blocked. Allow them in iOS Settings → famplanner-hub → Notifications.',
   'save-failed': 'Notifications were allowed, but saving failed. Please try again.',
   'subscribe-failed': 'Could not register for notifications. Please try again.',
+  'register-timeout': 'iOS didn’t return a push token. Push capability may be missing in Xcode.',
 };
 
 export function NotificationBell({ currentUserId, pushSubscribed, onEnablePush, profiles }: NotificationBellProps) {
@@ -33,10 +37,10 @@ export function NotificationBell({ currentUserId, pushSubscribed, onEnablePush, 
 
   const handleEnablePush = async () => {
     const result = await onEnablePush();
-    if (result.ok) { toast.success('Phone notifications are now on.'); return; }
-    const reason = (result as { ok: false; reason: keyof typeof subscribeErrorMessage; detail?: string }).reason;
-    const detail = (result as { ok: false; detail?: string }).detail;
-    toast.error(`${subscribeErrorMessage[reason]} (${reason}${detail ? ': ' + detail : ''})`);
+    if (result.ok === true) { toast.success('Phone notifications are now on.'); return; }
+    const r = result as { ok: false; reason: string; detail?: string };
+    const msg = friendlyReason[r.reason] ?? r.detail ?? 'Could not enable notifications.';
+    toast.error(msg);
   };
 
   return (
