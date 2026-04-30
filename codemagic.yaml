@@ -11,6 +11,7 @@ workflows:
       ios_signing:
         distribution_type: app_store
         bundle_identifier: com.nolongeranoob12.famplannerhub
+        provisioning_profile: Fam connect hub
     integrations:
       app_store_connect: Codemagic IOS Build
     scripts:
@@ -27,7 +28,7 @@ workflows:
           npx cap sync ios
           sed -i '' 's/app.lovable.chaufamily/com.nolongeranoob12.famplannerhub/g' ios/App/App.xcodeproj/project.pbxproj
           sed -i '' 's/app.lovable.chaufamily/com.nolongeranoob12.famplannerhub/g' ios/App/App/Info.plist
-          /usr/libexec/PlistBuddy -c "Set :CFBundleVersion 13" ios/App/App/Info.plist
+          /usr/libexec/PlistBuddy -c "Set :CFBundleVersion 14" ios/App/App/Info.plist
           /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString 1.0.4" ios/App/App/Info.plist
           /usr/libexec/PlistBuddy -c "Set :CFBundleDisplayName Family Connect Hub" ios/App/App/Info.plist
           /usr/libexec/PlistBuddy -c "Set :CFBundleName Family Connect Hub" ios/App/App/Info.plist
