@@ -5,7 +5,7 @@ const isDev = process.env.CAP_ENV === 'development';
 const config: CapacitorConfig = {
   appId: 'com.nolongeranoob12.famplannerhub',
   appName: 'Family Connect Hub',
-  version: '1.0.1',
+  version: '1.0.4',
   webDir: 'dist',
   // Hot-reload from Lovable sandbox is enabled ONLY when CAP_ENV=development.
   // For App Store builds, do NOT set CAP_ENV — the app will load the bundled
