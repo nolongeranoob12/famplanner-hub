@@ -46,8 +46,18 @@ workflows:
           printf '<?xml version="1.0" encoding="UTF-8"?>\n<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">\n<plist version="1.0">\n<dict>\n<key>aps-environment</key>\n<string>production</string>\n</dict>\n</plist>\n' > ios/App/App/App.entitlements
           echo "Entitlements file created"
           cat ios/App/App/App.entitlements
-          sed -i '' '/CODE_SIGN_STYLE/a\				CODE_SIGN_ENTITLEMENTS = App/App.entitlements;' ios/App/App.xcodeproj/project.pbxproj
-          echo "PBXPROJ updated"
+          python3 -c "
+          import re
+          with open('ios/App/App.xcodeproj/project.pbxproj', 'r') as f:
+              content = f.read()
+          content = content.replace(
+              'CODE_SIGN_STYLE = Automatic;',
+              'CODE_SIGN_STYLE = Automatic;\n\t\t\t\tCODE_SIGN_ENTITLEMENTS = App/App.entitlements;'
+          )
+          with open('ios/App/App.xcodeproj/project.pbxproj', 'w') as f:
+              f.write(content)
+          print('PBXPROJ updated')
+          "
           grep -n "CODE_SIGN_ENTITLEMENTS" ios/App/App.xcodeproj/project.pbxproj || echo "STILL NOT FOUND"
       - name: Debug Entitlements
         script: |
