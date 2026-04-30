@@ -27,7 +27,7 @@ workflows:
           npx cap sync ios
           sed -i '' 's/app.lovable.chaufamily/com.nolongeranoob12.famplannerhub/g' ios/App/App.xcodeproj/project.pbxproj
           sed -i '' 's/app.lovable.chaufamily/com.nolongeranoob12.famplannerhub/g' ios/App/App/Info.plist
-          /usr/libexec/PlistBuddy -c "Set :CFBundleVersion 10" ios/App/App/Info.plist
+          /usr/libexec/PlistBuddy -c "Set :CFBundleVersion 11" ios/App/App/Info.plist
           /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString 1.0.4" ios/App/App/Info.plist
           /usr/libexec/PlistBuddy -c "Set :CFBundleDisplayName Family Connect Hub" ios/App/App/Info.plist
           /usr/libexec/PlistBuddy -c "Set :CFBundleName Family Connect Hub" ios/App/App/Info.plist
