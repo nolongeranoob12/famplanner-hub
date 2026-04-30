@@ -11,7 +11,6 @@ workflows:
       ios_signing:
         distribution_type: app_store
         bundle_identifier: com.nolongeranoob12.famplannerhub
-        provisioning_profile: Fam connect hub
     integrations:
       app_store_connect: Codemagic IOS Build
     scripts:
@@ -35,52 +34,4 @@ workflows:
           /usr/libexec/PlistBuddy -c "Add :NSCameraUsageDescription string 'This app needs camera access to submit family photos'" ios/App/App/Info.plist
           /usr/libexec/PlistBuddy -c "Add :NSPhotoLibraryUsageDescription string 'This app needs photo library access to submit family photos'" ios/App/App/Info.plist
           /usr/libexec/PlistBuddy -c "Add :NSPhotoLibraryAddUsageDescription string 'This app needs photo library access to save family photos'" ios/App/App/Info.plist
-          /usr/libexec/PlistBuddy -c "Add :UIBackgroundModes array" ios/App/App/Info.plist
-          /usr/libexec/PlistBuddy -c "Add :UIBackgroundModes:0 string remote-notification" ios/App/App/Info.plist
-      - name: Install App Icon
-        script: |
-          mkdir -p ios/App/App/Assets.xcassets/AppIcon.appiconset
-          cp ios-assets/AppIcon-1024.png ios/App/App/Assets.xcassets/AppIcon.appiconset/AppIcon-1024.png
-          cp ios-assets/Contents.json ios/App/App/Assets.xcassets/AppIcon.appiconset/Contents.json
-      - name: Create Entitlements
-        script: |
-          printf '<?xml version="1.0" encoding="UTF-8"?>\n<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">\n<plist version="1.0">\n<dict>\n<key>aps-environment</key>\n<string>production</string>\n</dict>\n</plist>\n' > ios/App/App/App.entitlements
-          echo "Entitlements file created"
-          cat ios/App/App/App.entitlements
-          python3 -c "
-          import re
-          with open('ios/App/App.xcodeproj/project.pbxproj', 'r') as f:
-              content = f.read()
-          content = content.replace(
-              'CODE_SIGN_STYLE = Automatic;',
-              'CODE_SIGN_STYLE = Automatic;\n\t\t\t\tCODE_SIGN_ENTITLEMENTS = App/App.entitlements;'
-          )
-          with open('ios/App/App.xcodeproj/project.pbxproj', 'w') as f:
-              f.write(content)
-          print('PBXPROJ updated')
-          "
-          grep -n "CODE_SIGN_ENTITLEMENTS" ios/App/App.xcodeproj/project.pbxproj || echo "STILL NOT FOUND"
-      - name: Debug Entitlements
-        script: |
-          echo "=== ENTITLEMENTS FILE ===" 
-          cat ios/App/App/App.entitlements
-          echo "=== PBXPROJ CODESIGN CHECK ==="
-          grep -n "CODE_SIGN_ENTITLEMENTS" ios/App/App.xcodeproj/project.pbxproj || echo "NOT FOUND"
-      - name: Install CocoaPods
-        script: |
-          cd ios/App
-          pod init
-          pod install
-      - name: Build iOS
-        script: |
-          xcode-project use-profiles
-          xcode-project build-ipa \
-            --workspace ios/App/App.xcworkspace \
-            --scheme App
-          mv "build/ios/ipa/Family Connect Hub.ipa" "build/ios/ipa/FamilyConnectHub.ipa" || true
-    artifacts:
-      - build/ios/ipa/FamilyConnectHub.ipa
-    publishing:
-      app_store_connect:
-        auth: integration
-        submit_to_testflight: true
+          /usr/libexec/PlistBuddy -c "Add :UIBackgroundModes array" ios/App/App
