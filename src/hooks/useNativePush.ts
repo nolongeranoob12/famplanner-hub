@@ -192,7 +192,7 @@ export function useNativePush(currentUserId: string | null, displayName: string,
             });
         });
 
-        if (result.ok) {
+        if (result.ok === true) {
           setSubscribed(true);
           setLastError(null);
         } else {
