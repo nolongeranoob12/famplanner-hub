@@ -69,7 +69,7 @@ async function saveSubscription(userId: string, displayName: string, sub: PushSu
       p256dh: toBase64(key),
       auth: toBase64(auth),
     } as any,
-    { onConflict: 'endpoint' }
+    { onConflict: 'endpoint,user_id' }
   );
 
   if (error) {
