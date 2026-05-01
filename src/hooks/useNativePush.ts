@@ -190,7 +190,7 @@ async function initializeListenersOnce() {
       await saveTokenToBackend(token.value, ctx);
       resolvePending({ ok: true });
     } catch (err) {
-      console.error('[NativePush] save token failed', err);
+      nativePushLog(pendingAttemptId, 'save token failed', { error: (err as Error)?.message ?? String(err) }, 'error');
       resolvePending({
         ok: false,
         reason: 'subscribe-failed',
