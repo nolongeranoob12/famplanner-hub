@@ -274,7 +274,10 @@ export function ShoppingList({ currentUserId, profiles }: ShoppingListProps) {
           })()}
         </AnimatePresence>
       </div>
-      <SheetContent side="right" className="w-full sm:max-w-md p-0 flex flex-col bg-gradient-to-b from-background to-muted/30">
+      <SheetContent
+        side="right"
+        className="w-full sm:max-w-md p-0 flex flex-col bg-gradient-to-b from-background to-muted/30 pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)] pr-[env(safe-area-inset-right)]"
+      >
         <SheetHeader className="px-5 pt-5 pb-4 border-b border-border/60 bg-card/50 backdrop-blur-sm">
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-3">
