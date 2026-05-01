@@ -41,14 +41,85 @@ let lastTokenSavedFor: string | null = null; // userId for which we last saved a
 let registrationAttempt = 0;
 let pendingAttemptId: number | null = null;
 
-function nativePushLog(attemptId: number | null, step: string, details?: Record<string, unknown>) {
-  const prefix = attemptId ? `[NativePush #${attemptId}]` : '[NativePush]';
-  const payload = { at: new Date().toISOString(), ...details };
-  if (details) {
-    console.log(`${prefix} ${step}`, payload);
-  } else {
-    console.log(`${prefix} ${step}`, { at: payload.at });
+export interface NativePushLogEntry {
+  id: number;
+  at: string;
+  attemptId: number | null;
+  step: string;
+  details?: Record<string, unknown>;
+  level: 'info' | 'warn' | 'error';
+}
+
+const MAX_LOG_ENTRIES = 200;
+const nativePushLogBuffer: NativePushLogEntry[] = [];
+const nativePushLogListeners = new Set<(entries: NativePushLogEntry[]) => void>();
+let nativePushLogId = 0;
+
+function emitNativePushLog(entry: NativePushLogEntry) {
+  nativePushLogBuffer.push(entry);
+  if (nativePushLogBuffer.length > MAX_LOG_ENTRIES) {
+    nativePushLogBuffer.splice(0, nativePushLogBuffer.length - MAX_LOG_ENTRIES);
   }
+  // Persist a small ring buffer so /debug can show logs even after navigation.
+  try {
+    localStorage.setItem('native-push-logs', JSON.stringify(nativePushLogBuffer.slice(-MAX_LOG_ENTRIES)));
+  } catch {
+    // ignore quota errors
+  }
+  const snapshot = [...nativePushLogBuffer];
+  nativePushLogListeners.forEach((l) => {
+    try { l(snapshot); } catch { /* noop */ }
+  });
+}
+
+export function getNativePushLogs(): NativePushLogEntry[] {
+  if (nativePushLogBuffer.length === 0) {
+    try {
+      const stored = localStorage.getItem('native-push-logs');
+      if (stored) {
+        const parsed = JSON.parse(stored) as NativePushLogEntry[];
+        if (Array.isArray(parsed)) {
+          nativePushLogBuffer.push(...parsed);
+          nativePushLogId = Math.max(nativePushLogId, ...parsed.map((p) => p.id ?? 0));
+        }
+      }
+    } catch {
+      // ignore
+    }
+  }
+  return [...nativePushLogBuffer];
+}
+
+export function subscribeNativePushLogs(listener: (entries: NativePushLogEntry[]) => void): () => void {
+  nativePushLogListeners.add(listener);
+  return () => { nativePushLogListeners.delete(listener); };
+}
+
+export function clearNativePushLogs() {
+  nativePushLogBuffer.length = 0;
+  try { localStorage.removeItem('native-push-logs'); } catch { /* noop */ }
+  nativePushLogListeners.forEach((l) => { try { l([]); } catch { /* noop */ } });
+}
+
+function nativePushLog(
+  attemptId: number | null,
+  step: string,
+  details?: Record<string, unknown>,
+  level: 'info' | 'warn' | 'error' = 'info'
+) {
+  const prefix = attemptId ? `[NativePush #${attemptId}]` : '[NativePush]';
+  const at = new Date().toISOString();
+  const payload = { at, ...(details ?? {}) };
+  const logFn = level === 'error' ? console.error : level === 'warn' ? console.warn : console.log;
+  logFn(`${prefix} ${step}`, payload);
+  emitNativePushLog({
+    id: ++nativePushLogId,
+    at,
+    attemptId,
+    step,
+    details,
+    level,
+  });
 }
 
 function resolvePending(result: { ok: true } | { ok: false; reason: NativePushReason; detail?: string }) {
@@ -112,14 +183,14 @@ async function initializeListenersOnce() {
     });
     const ctx = pendingContext;
     if (!ctx) {
-      console.warn('[NativePush] registration fired with no pending context');
+      nativePushLog(null, 'registration fired with no pending context', undefined, 'warn');
       return;
     }
     try {
       await saveTokenToBackend(token.value, ctx);
       resolvePending({ ok: true });
     } catch (err) {
-      console.error('[NativePush] save token failed', err);
+      nativePushLog(pendingAttemptId, 'save token failed', { error: (err as Error)?.message ?? String(err) }, 'error');
       resolvePending({
         ok: false,
         reason: 'subscribe-failed',
@@ -130,13 +201,11 @@ async function initializeListenersOnce() {
 
   await PushNotifications.addListener('registrationError', (err) => {
     const detail = (err as any)?.error ?? JSON.stringify(err);
-    console.error('[NativePush] registrationError', {
-      at: new Date().toISOString(),
-      attemptId: pendingAttemptId,
+    nativePushLog(pendingAttemptId, 'registrationError listener fired', {
       detail,
       hasPendingContext: !!pendingContext,
       hasResolver: !!tokenResolver,
-    });
+    }, 'error');
     resolvePending({
       ok: false,
       reason: 'apns-error',
@@ -299,7 +368,7 @@ export function useNativePush(currentUserId: string | null, displayName: string,
         }
         return result;
       } catch (err) {
-        console.error('[NativePush] register failed', { at: new Date().toISOString(), attemptId, err });
+        nativePushLog(attemptId, 'register() threw exception', { error: (err as Error)?.message ?? String(err) }, 'error');
         setSubscribed(false);
         const detail = (err as Error)?.message ?? String(err);
         setLastError(detail);

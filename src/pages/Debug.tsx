@@ -3,10 +3,17 @@ import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, RefreshCw, CheckCircle2, XCircle, AlertCircle, Send } from 'lucide-react';
+import { ArrowLeft, RefreshCw, CheckCircle2, XCircle, AlertCircle, Send, Trash2, Bell } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
+import {
+  getNativePushLogs,
+  subscribeNativePushLogs,
+  clearNativePushLogs,
+  useNativePush,
+  type NativePushLogEntry,
+} from '@/hooks/useNativePush';
 
 function StatusIcon({ ok }: { ok: boolean | null }) {
   if (ok === null) return <AlertCircle className="w-4 h-4 text-muted-foreground" />;
@@ -20,6 +27,36 @@ export default function Debug() {
   const [info, setInfo] = useState<Record<string, any>>({});
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
+  const [pushLogs, setPushLogs] = useState<NativePushLogEntry[]>(() => getNativePushLogs());
+  const [registering, setRegistering] = useState(false);
+
+  const { subscribe: registerNativePush } = useNativePush(
+    currentUser,
+    profile?.display_name ?? 'Unknown',
+    profile?.family_id ?? null,
+  );
+
+  useEffect(() => {
+    setPushLogs(getNativePushLogs());
+    const unsub = subscribeNativePushLogs((entries) => setPushLogs(entries));
+    return unsub;
+  }, []);
+
+  const triggerRegistration = async () => {
+    setRegistering(true);
+    try {
+      const result = await registerNativePush({ requestPermission: true });
+      if (result.ok === true) {
+        toast.success('APNs registration succeeded.');
+      } else {
+        toast.error(`Registration failed: ${result.reason}${result.detail ? ` — ${result.detail}` : ''}`);
+      }
+    } catch (e: any) {
+      toast.error(`Error: ${e?.message ?? String(e)}`);
+    } finally {
+      setRegistering(false);
+    }
+  };
 
   const gather = async () => {
     setLoading(true);
@@ -155,6 +192,81 @@ export default function Debug() {
               <Send className="w-3.5 h-3.5 mr-1.5" />
               {sending ? 'Sending…' : 'Send test push'}
             </Button>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-3 flex flex-row items-center justify-between space-y-0">
+            <CardTitle className="text-sm font-semibold">APNs Registration Logs</CardTitle>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={triggerRegistration}
+                disabled={registering || !currentUser || !profile?.family_id}
+              >
+                <Bell className={`w-3.5 h-3.5 mr-1.5 ${registering ? 'animate-pulse' : ''}`} />
+                {registering ? 'Registering…' : 'Trigger'}
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => { clearNativePushLogs(); setPushLogs([]); }}
+                disabled={pushLogs.length === 0}
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <p className="text-xs text-muted-foreground mb-3">
+              Live log of every step in the native push registration flow. Tap <span className="font-semibold">Trigger</span> to start a registration attempt and watch the steps below in real time.
+            </p>
+            {pushLogs.length === 0 ? (
+              <p className="text-xs text-muted-foreground italic py-4 text-center">
+                No log entries yet. Tap "Trigger" to start a registration attempt.
+              </p>
+            ) : (
+              <div className="bg-muted/30 rounded-md border border-border max-h-96 overflow-y-auto">
+                {[...pushLogs].reverse().map((entry) => {
+                  const color =
+                    entry.level === 'error'
+                      ? 'text-destructive'
+                      : entry.level === 'warn'
+                        ? 'text-amber-600 dark:text-amber-400'
+                        : 'text-foreground';
+                  return (
+                    <div
+                      key={entry.id}
+                      className="px-3 py-2 border-b border-border last:border-0 text-xs font-mono"
+                    >
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="text-muted-foreground/70 text-[10px]">
+                          {new Date(entry.at).toLocaleTimeString(undefined, { hour12: false })}
+                        </span>
+                        {entry.attemptId !== null && (
+                          <Badge variant="secondary" className="text-[9px] px-1.5 py-0 h-4">
+                            #{entry.attemptId}
+                          </Badge>
+                        )}
+                        <Badge
+                          variant={entry.level === 'error' ? 'destructive' : 'outline'}
+                          className="text-[9px] px-1.5 py-0 h-4 uppercase"
+                        >
+                          {entry.level}
+                        </Badge>
+                      </div>
+                      <p className={`${color} font-medium break-words`}>{entry.step}</p>
+                      {entry.details && Object.keys(entry.details).length > 0 && (
+                        <pre className="mt-1 text-[10px] text-muted-foreground whitespace-pre-wrap break-all">
+                          {JSON.stringify(entry.details, null, 2)}
+                        </pre>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </CardContent>
         </Card>
 
