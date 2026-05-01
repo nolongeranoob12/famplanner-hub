@@ -279,6 +279,7 @@ export function FamilySettings() {
               </AlertDialogContent>
             </AlertDialog>
           </section>
+          </div>
         </div>
       </SheetContent>
     </Sheet>
