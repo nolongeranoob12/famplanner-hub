@@ -155,7 +155,7 @@ async function saveTokenToBackend(token: string, ctx: PendingContext) {
       device_token: token,
       bundle_id: 'com.nolongeranoob12.famplannerhub',
     } as any,
-    { onConflict: 'device_token' }
+    { onConflict: 'device_token,user_id' }
   );
   if (error) throw error;
   lastTokenSavedFor = ctx.userId;
