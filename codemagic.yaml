@@ -41,40 +41,13 @@ workflows:
           cat ios/App/App/AppDelegate.swift || echo "FILE NOT FOUND"
       - name: Fix AppDelegate
         script: |
-          python3 << 'EOF'
-          content = """import UIKit
-import Capacitor
-
-@UIApplicationMain
-class AppDelegate: UIResponder, UIApplicationDelegate {
-
-    var window: UIWindow?
-
-    func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
-        return true
-    }
-
-    func application(_ app: UIApplication, open url: URL, options: [UIApplication.OpenURLOptionsKey: Any] = [:]) -> Bool {
-        return ApplicationDelegateProxy.shared.application(app, open: url, options: options)
-    }
-
-    func application(_ application: UIApplication, continue userActivity: NSUserActivity, restorationHandler: @escaping ([UIUserActivityRestoring]?) -> Void) -> Bool {
-        return ApplicationDelegateProxy.shared.application(application, continue: userActivity, restorationHandler: restorationHandler)
-    }
-
-    func application(_ application: UIApplication, didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {
-        NotificationCenter.default.post(name: .capacitorDidRegisterForRemoteNotifications, object: deviceToken)
-    }
-
-    func application(_ application: UIApplication, didFailToRegisterForRemoteNotificationsWithError error: Error) {
-        NotificationCenter.default.post(name: .capacitorDidFailToRegisterForRemoteNotifications, object: error)
-    }
-}
-"""
-          with open('ios/App/App/AppDelegate.swift', 'w') as f:
-              f.write(content)
+          python3 -c "
+          import base64
+          code = 'aW1wb3J0IFVJS2l0CmltcG9ydCBDYXBhY2l0b3IKCkBVSUFwcGxpY2F0aW9uTWFpbgpjbGFzcyBBcHBEZWxlZ2F0ZTogVUlSZXNwb25kZXIsIFVJQXBwbGljYXRpb25EZWxlZ2F0ZSB7CgogICAgdmFyIHdpbmRvdzogVUlXaW5kb3c/CgogICAgZnVuYyBhcHBsaWNhdGlvbihfIGFwcGxpY2F0aW9uOiBVSUFwcGxpY2F0aW9uLCBkaWRGaW5pc2hMYXVuY2hpbmdXaXRoT3B0aW9ucyBsYXVuY2hPcHRpb25zOiBbVUlBcHBsaWNhdGlvbi5MYXVuY2hPcHRpb25zS2V5OiBBbnldPykgLT4gQm9vbCB7CiAgICAgICAgcmV0dXJuIHRydWUKICAgIH0KCiAgICBmdW5jIGFwcGxpY2F0aW9uKF8gYXBwOiBVSUFwcGxpY2F0aW9uLCBvcGVuIHVybDogVVJMLCBvcHRpb25zOiBbVUlBcHBsaWNhdGlvbi5PcGVuVVJMT3B0aW9uc0tleTogQW55XSA9IFs6XSkgLT4gQm9vbCB7CiAgICAgICAgcmV0dXJuIEFwcGxpY2F0aW9uRGVsZWdhdGVQcm94eS5zaGFyZWQuYXBwbGljYXRpb24oYXBwLCBvcGVuOiB1cmwsIG9wdGlvbnM6IG9wdGlvbnMpCiAgICB9CgogICAgZnVuYyBhcHBsaWNhdGlvbihfIGFwcGxpY2F0aW9uOiBVSUFwcGxpY2F0aW9uLCBjb250aW51ZSB1c2VyQWN0aXZpdHk6IE5TVXNlckFjdGl2aXR5LCByZXN0b3JhdGlvbkhhbmRsZXI6IEBlc2NhcGluZyAoW1VJVXNlckFjdGl2aXR5UmVzdG9yaW5nXT8pIC0+IFZvaWQpIC0+IEJvb2wgewogICAgICAgIHJldHVybiBBcHBsaWNhdGlvbkRlbGVnYXRlUHJveHkuc2hhcmVkLmFwcGxpY2F0aW9uKGFwcGxpY2F0aW9uLCBjb250aW51ZTogdXNlckFjdGl2aXR5LCByZXN0b3JhdGlvbkhhbmRsZXI6IHJlc3RvcmF0aW9uSGFuZGxlcikKICAgIH0KCiAgICBmdW5jIGFwcGxpY2F0aW9uKF8gYXBwbGljYXRpb246IFVJQXBwbGljYXRpb24sIGRpZFJlZ2lzdGVyRm9yUmVtb3RlTm90aWZpY2F0aW9uc1dpdGhEZXZpY2VUb2tlbiBkZXZpY2VUb2tlbjogRGF0YSkgewogICAgICAgIE5vdGlmaWNhdGlvbkNlbnRlci5kZWZhdWx0LnBvc3QobmFtZTogLmNhcGFjaXRvckRpZFJlZ2lzdGVyRm9yUmVtb3RlTm90aWZpY2F0aW9ucywgb2JqZWN0OiBkZXZpY2VUb2tlbikKICAgIH0KCiAgICBmdW5jIGFwcGxpY2F0aW9uKF8gYXBwbGljYXRpb246IFVJQXBwbGljYXRpb24sIGRpZEZhaWxUb1JlZ2lzdGVyRm9yUmVtb3RlTm90aWZpY2F0aW9uc1dpdGhFcnJvciBlcnJvcjogRXJyb3IpIHsKICAgICAgICBOb3RpZmljYXRpb25DZW50ZXIuZGVmYXVsdC5wb3N0KG5hbWU6IC5jYXBhY2l0b3JEaWRGYWlsVG9SZWdpc3RlckZvclJlbW90ZU5vdGlmaWNhdGlvbnMsIG9iamVjdDogZXJyb3IpCiAgICB9Cn0K'
+          with open('ios/App/App/AppDelegate.swift', 'wb') as f:
+              f.write(base64.b64decode(code))
           print('AppDelegate.swift written successfully')
-          EOF
+          "
           cat ios/App/App/AppDelegate.swift
       - name: Install App Icon
         script: |
