@@ -3,10 +3,17 @@ import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, RefreshCw, CheckCircle2, XCircle, AlertCircle, Send } from 'lucide-react';
+import { ArrowLeft, RefreshCw, CheckCircle2, XCircle, AlertCircle, Send, Trash2, Bell } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
+import {
+  getNativePushLogs,
+  subscribeNativePushLogs,
+  clearNativePushLogs,
+  useNativePush,
+  type NativePushLogEntry,
+} from '@/hooks/useNativePush';
 
 function StatusIcon({ ok }: { ok: boolean | null }) {
   if (ok === null) return <AlertCircle className="w-4 h-4 text-muted-foreground" />;
