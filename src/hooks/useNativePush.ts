@@ -183,27 +183,58 @@ export function useNativePush(currentUserId: string | null, displayName: string,
 
   const register = useCallback(
     async (options: { requestPermission?: boolean } = {}): Promise<NativePushResult> => {
-      if (!currentUserId) return { ok: false, reason: 'no-user' };
-      if (!familyId) return { ok: false, reason: 'no-family' };
-      if (!Capacitor.isNativePlatform()) return { ok: false, reason: 'unsupported' };
+      const attemptId = ++registrationAttempt;
+      nativePushLog(attemptId, 'register() requested', {
+        platform: Capacitor.getPlatform(),
+        isNativePlatform: Capacitor.isNativePlatform(),
+        hasUserId: !!currentUserId,
+        hasFamilyId: !!familyId,
+        displayName,
+        requestPermission: options.requestPermission ?? true,
+      });
+
+      if (!currentUserId) {
+        nativePushLog(attemptId, 'aborting: missing currentUserId');
+        return { ok: false, reason: 'no-user' };
+      }
+      if (!familyId) {
+        nativePushLog(attemptId, 'aborting: missing familyId');
+        return { ok: false, reason: 'no-family' };
+      }
+      if (!Capacitor.isNativePlatform()) {
+        nativePushLog(attemptId, 'aborting: not native platform', { platform: Capacitor.getPlatform() });
+        return { ok: false, reason: 'unsupported' };
+      }
 
       try {
+        nativePushLog(attemptId, 'initializing listeners before permission check');
         await initializeListenersOnce();
 
         const requestPermission = options.requestPermission ?? true;
+        nativePushLog(attemptId, 'checking notification permissions');
         let perm = await PushNotifications.checkPermissions();
+        nativePushLog(attemptId, 'checkPermissions() resolved', { receive: perm.receive });
         if (perm.receive === 'prompt' || perm.receive === 'prompt-with-rationale') {
           if (!requestPermission) {
+            nativePushLog(attemptId, 'permission prompt required but silent registration requested');
             setSubscribed(false);
             setLastError(null);
             return { ok: false, reason: 'permission-pending' };
           }
+          nativePushLog(attemptId, 'requesting notification permissions');
           perm = await PushNotifications.requestPermissions();
+          nativePushLog(attemptId, 'requestPermissions() resolved', { receive: perm.receive });
+        } else {
+          nativePushLog(attemptId, 'requestPermissions() skipped because permission is already decided', { receive: perm.receive });
         }
 
-        await Badge.requestPermissions().catch(() => undefined);
+        nativePushLog(attemptId, 'requesting badge permission');
+        await Badge.requestPermissions()
+          .then(() => nativePushLog(attemptId, 'badge permission request resolved'))
+          .catch((err) => nativePushLog(attemptId, 'badge permission request failed/non-fatal', { detail: (err as Error)?.message ?? String(err) }));
 
         if (perm.receive !== 'granted') {
+          nativePushLog(attemptId, 'aborting: notification permission not granted', { receive: perm.receive });
           setSubscribed(false);
           setLastError('Permission denied. Enable notifications for this app in iOS Settings.');
           return { ok: false, reason: 'blocked' };
@@ -212,12 +243,20 @@ export function useNativePush(currentUserId: string | null, displayName: string,
         // Set the pending context BEFORE calling register so the listener has
         // the user/family info when iOS hands back the token.
         pendingContext = { userId: currentUserId, familyId, displayName };
+        pendingAttemptId = attemptId;
+        nativePushLog(attemptId, 'pending context set; calling PushNotifications.register() after permissions resolved', {
+          permissionReceive: perm.receive,
+          hasResolverBeforeSet: !!tokenResolver,
+        });
 
         const result = await new Promise<NativePushResult>((resolve) => {
+          nativePushLog(attemptId, 'token promise created and resolver installed');
           tokenResolver = resolve;
           const timeoutId = setTimeout(() => {
             if (tokenResolver === resolve) {
+              nativePushLog(attemptId, 'timed out waiting for registration listener token');
               tokenResolver = null;
+              pendingAttemptId = null;
               resolve({
                 ok: false,
                 reason: 'register-timeout',
@@ -229,12 +268,14 @@ export function useNativePush(currentUserId: string | null, displayName: string,
 
           PushNotifications.register()
             .then(() => {
-              console.log('[NativePush] register() call resolved, waiting for token…');
+              nativePushLog(attemptId, 'PushNotifications.register() resolved; waiting for registration listener token');
             })
             .catch((err) => {
               clearTimeout(timeoutId);
               if (tokenResolver === resolve) {
+                nativePushLog(attemptId, 'PushNotifications.register() rejected', { detail: (err as Error)?.message ?? String(err) });
                 tokenResolver = null;
+                pendingAttemptId = null;
                 resolve({
                   ok: false,
                   reason: 'subscribe-failed',
@@ -245,15 +286,20 @@ export function useNativePush(currentUserId: string | null, displayName: string,
         });
 
         if (result.ok === true) {
+          nativePushLog(attemptId, 'registration flow completed successfully');
           setSubscribed(true);
           setLastError(null);
         } else {
+          nativePushLog(attemptId, 'registration flow completed with failure', {
+            reason: result.reason,
+            detail: result.detail,
+          });
           setSubscribed(false);
           setLastError(result.detail ?? null);
         }
         return result;
       } catch (err) {
-        console.error('[NativePush] register failed', err);
+        console.error('[NativePush] register failed', { at: new Date().toISOString(), attemptId, err });
         setSubscribed(false);
         const detail = (err as Error)?.message ?? String(err);
         setLastError(detail);
