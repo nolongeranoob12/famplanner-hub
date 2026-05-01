@@ -150,20 +150,13 @@ async function saveTokenToBackend(token: string, ctx: PendingContext) {
     tokenLength: token.length,
     tokenPreview: token.slice(0, 12),
   });
-  const { error } = await supabase.from('push_subscriptions').upsert(
-    {
-      user_id: ctx.userId,
-      family_id: ctx.familyId,
-      member_name: ctx.displayName,
-      endpoint: `apns://${token}`,
-      p256dh: 'native',
-      auth: 'native',
-      platform,
-      device_token: token,
-      bundle_id: 'com.nolongeranoob12.famplannerhub',
-    } as any,
-    { onConflict: 'device_token,user_id' }
-  );
+  const { error } = await supabase.rpc('register_native_push_subscription' as any, {
+    _device_token: token,
+    _family_id: ctx.familyId,
+    _member_name: ctx.displayName,
+    _platform: platform,
+    _bundle_id: 'com.nolongeranoob12.famplannerhub',
+  } as any);
   if (error) throw error;
   lastTokenSavedFor = ctx.userId;
   nativePushLog(null, 'native token saved successfully', { platform, userId: ctx.userId });

@@ -438,6 +438,16 @@ export type Database = {
       }
       join_family_by_code: { Args: { _code: string }; Returns: string }
       regenerate_invite_code: { Args: { _family_id: string }; Returns: string }
+      register_native_push_subscription: {
+        Args: {
+          _bundle_id?: string
+          _device_token: string
+          _family_id: string
+          _member_name: string
+          _platform?: string
+        }
+        Returns: undefined
+      }
       remove_family_member: { Args: { _user_id: string }; Returns: undefined }
     }
     Enums: {
