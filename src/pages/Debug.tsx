@@ -27,6 +27,36 @@ export default function Debug() {
   const [info, setInfo] = useState<Record<string, any>>({});
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
+  const [pushLogs, setPushLogs] = useState<NativePushLogEntry[]>(() => getNativePushLogs());
+  const [registering, setRegistering] = useState(false);
+
+  const { subscribe: registerNativePush } = useNativePush(
+    currentUser,
+    profile?.display_name ?? 'Unknown',
+    profile?.family_id ?? null,
+  );
+
+  useEffect(() => {
+    setPushLogs(getNativePushLogs());
+    const unsub = subscribeNativePushLogs((entries) => setPushLogs(entries));
+    return unsub;
+  }, []);
+
+  const triggerRegistration = async () => {
+    setRegistering(true);
+    try {
+      const result = await registerNativePush({ requestPermission: true });
+      if (result.ok) {
+        toast.success('APNs registration succeeded.');
+      } else {
+        toast.error(`Registration failed: ${result.reason}`);
+      }
+    } catch (e: any) {
+      toast.error(`Error: ${e?.message ?? String(e)}`);
+    } finally {
+      setRegistering(false);
+    }
+  };
 
   const gather = async () => {
     setLoading(true);
