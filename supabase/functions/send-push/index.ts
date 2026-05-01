@@ -249,19 +249,26 @@ Deno.serve(async (req) => {
 
           const jwt = await createApnsJwt(apnsTeamId, apnsKeyId, apnsPrivateKey);
           const badge = unreadCounts.get(sub.user_id) ?? 1;
-          const res = await sendApnsPush({
-            token: sub.device_token ?? String(sub.endpoint).replace("apns://", ""),
-            title,
-            body,
-            badge,
-            bundleId: sub.bundle_id ?? defaultBundleId,
-            jwt,
-          });
-          console.log(`APNs push to user ${sub.user_id}: status ${res.status}`);
-          if (res.status === 400 || res.status === 410) {
+          const token = sub.device_token ?? String(sub.endpoint).replace("apns://", "");
+          const bundleId = sub.bundle_id ?? defaultBundleId;
+
+          // Try production first; on BadDeviceToken (400) fall back to sandbox.
+          let { res, reason } = await sendApnsPush({ token, title, body, badge, bundleId, jwt, host: "api.push.apple.com" });
+          let host = "api.push.apple.com";
+          if (res.status === 400 && /BadDeviceToken/i.test(reason)) {
+            console.log(`Prod APNs returned BadDeviceToken for ${sub.user_id}, retrying sandbox`);
+            const fallback = await sendApnsPush({ token, title, body, badge, bundleId, jwt, host: "api.sandbox.push.apple.com" });
+            res = fallback.res;
+            reason = fallback.reason;
+            host = "api.sandbox.push.apple.com";
+          }
+
+          console.log(`APNs ${host} -> user ${sub.user_id}: status ${res.status}${reason ? ` reason=${reason}` : ""} topic=${bundleId}`);
+
+          if (res.status === 410 || (res.status === 400 && /BadDeviceToken/i.test(reason))) {
             await supabase.from("push_subscriptions").delete().eq("id", sub.id);
           }
-          return { endpoint: sub.endpoint, status: res.status };
+          return { endpoint: sub.endpoint, status: res.status, reason };
         }
 
         const vapidHeaders = await createVapidAuthHeader(sub.endpoint, vapidPublic, vapidPrivate);
