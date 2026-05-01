@@ -60,7 +60,7 @@ workflows:
           grep -n "CODE_SIGN_ENTITLEMENTS" ios/App/App.xcodeproj/project.pbxproj || echo "STILL NOT FOUND"
       - name: Debug Entitlements
         script: |
-          echo "=== ENTITLEMENTS FILE ===" 
+          echo "=== ENTITLEMENTS FILE ==="
           cat ios/App/App/App.entitlements
           echo "=== PBXPROJ CODESIGN CHECK ==="
           grep -n "CODE_SIGN_ENTITLEMENTS" ios/App/App.xcodeproj/project.pbxproj || echo "NOT FOUND"
@@ -76,7 +76,7 @@ workflows:
             --workspace ios/App/App.xcworkspace \
             --scheme App
           mv "build/ios/ipa/Family Connect Hub.ipa" "build/ios/ipa/FamilyConnectHub.ipa" || true
-        - name: Debug IPA Entitlements
+      - name: Debug IPA Entitlements
         script: |
           cd build/ios/ipa
           unzip -o FamilyConnectHub.ipa -d ipa_extracted || true
