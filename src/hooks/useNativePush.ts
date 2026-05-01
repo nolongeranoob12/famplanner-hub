@@ -312,15 +312,31 @@ export function useNativePush(currentUserId: string | null, displayName: string,
   // Auto-attempt silent registration once we have user + family, but only if
   // permission was already granted in a previous session.
   useEffect(() => {
-    if (!currentUserId || !familyId || !Capacitor.isNativePlatform()) return;
+    if (!currentUserId || !familyId || !Capacitor.isNativePlatform()) {
+      nativePushLog(null, 'silent auto-registration skipped', {
+        hasUserId: !!currentUserId,
+        hasFamilyId: !!familyId,
+        isNativePlatform: Capacitor.isNativePlatform(),
+        platform: Capacitor.getPlatform(),
+      });
+      return;
+    }
     let cancelled = false;
     (async () => {
+      nativePushLog(null, 'silent auto-registration effect started', { currentUserId, familyId });
       await initializeListenersOnce();
       if (cancelled) return;
       const perm = await PushNotifications.checkPermissions();
+      nativePushLog(null, 'silent auto-registration permission check resolved', {
+        receive: perm.receive,
+        lastTokenSavedFor,
+        currentUserId,
+      });
       if (perm.receive === 'granted' && lastTokenSavedFor !== currentUserId) {
+        nativePushLog(null, 'silent auto-registration calling register()', { currentUserId });
         await register({ requestPermission: false });
       } else if (perm.receive === 'granted') {
+        nativePushLog(null, 'silent auto-registration already has token for user; marking subscribed');
         setSubscribed(true);
       }
     })();
