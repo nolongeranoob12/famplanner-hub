@@ -80,9 +80,17 @@ export default function Auth() {
   };
 
   return (
-    <div className="min-h-dvh bg-background flex items-center justify-center p-6 safe-pt safe-pb safe-px">
+    <div
+      className="min-h-dvh w-full bg-background flex items-center justify-center px-6"
+      style={{
+        paddingTop: 'max(env(safe-area-inset-top), 1.5rem)',
+        paddingBottom: 'max(env(safe-area-inset-bottom), 1.5rem)',
+        paddingLeft: 'max(env(safe-area-inset-left), 1.5rem)',
+        paddingRight: 'max(env(safe-area-inset-right), 1.5rem)',
+      }}
+    >
       <motion.div
-        className="w-full max-w-sm space-y-7"
+        className="w-full max-w-sm sm:max-w-md mx-auto space-y-7"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4 }}
