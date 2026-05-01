@@ -3,7 +3,8 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/co
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Settings, Copy, RefreshCw, Loader2, LogOut, UserMinus, Trash2 } from 'lucide-react';
+import { Settings, Copy, RefreshCw, Loader2, LogOut, UserMinus, Trash2, Bug } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { type Family, getMyFamily, regenerateInviteCode, renameFamily, isFamilyOwner, removeFamilyMember, deleteMyAccount } from '@/lib/families';
 import { updateMyProfile, getFamilyProfiles, getDisplayAvatar, type Profile } from '@/lib/profiles';
