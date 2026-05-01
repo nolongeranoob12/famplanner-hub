@@ -201,13 +201,11 @@ async function initializeListenersOnce() {
 
   await PushNotifications.addListener('registrationError', (err) => {
     const detail = (err as any)?.error ?? JSON.stringify(err);
-    console.error('[NativePush] registrationError', {
-      at: new Date().toISOString(),
-      attemptId: pendingAttemptId,
+    nativePushLog(pendingAttemptId, 'registrationError listener fired', {
       detail,
       hasPendingContext: !!pendingContext,
       hasResolver: !!tokenResolver,
-    });
+    }, 'error');
     resolvePending({
       ok: false,
       reason: 'apns-error',
