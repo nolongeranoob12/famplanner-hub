@@ -368,7 +368,7 @@ export function useNativePush(currentUserId: string | null, displayName: string,
         }
         return result;
       } catch (err) {
-        console.error('[NativePush] register failed', { at: new Date().toISOString(), attemptId, err });
+        nativePushLog(attemptId, 'register() threw exception', { error: (err as Error)?.message ?? String(err) }, 'error');
         setSubscribed(false);
         const detail = (err as Error)?.message ?? String(err);
         setLastError(detail);
