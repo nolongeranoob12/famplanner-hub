@@ -196,6 +196,81 @@ export default function Debug() {
         </Card>
 
         <Card>
+          <CardHeader className="pb-3 flex flex-row items-center justify-between space-y-0">
+            <CardTitle className="text-sm font-semibold">APNs Registration Logs</CardTitle>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={triggerRegistration}
+                disabled={registering || !currentUser || !profile?.family_id}
+              >
+                <Bell className={`w-3.5 h-3.5 mr-1.5 ${registering ? 'animate-pulse' : ''}`} />
+                {registering ? 'Registering…' : 'Trigger'}
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => { clearNativePushLogs(); setPushLogs([]); }}
+                disabled={pushLogs.length === 0}
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <p className="text-xs text-muted-foreground mb-3">
+              Live log of every step in the native push registration flow. Tap <span className="font-semibold">Trigger</span> to start a registration attempt and watch the steps below in real time.
+            </p>
+            {pushLogs.length === 0 ? (
+              <p className="text-xs text-muted-foreground italic py-4 text-center">
+                No log entries yet. Tap "Trigger" to start a registration attempt.
+              </p>
+            ) : (
+              <div className="bg-muted/30 rounded-md border border-border max-h-96 overflow-y-auto">
+                {[...pushLogs].reverse().map((entry) => {
+                  const color =
+                    entry.level === 'error'
+                      ? 'text-destructive'
+                      : entry.level === 'warn'
+                        ? 'text-amber-600 dark:text-amber-400'
+                        : 'text-foreground';
+                  return (
+                    <div
+                      key={entry.id}
+                      className="px-3 py-2 border-b border-border last:border-0 text-xs font-mono"
+                    >
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="text-muted-foreground/70 text-[10px]">
+                          {new Date(entry.at).toLocaleTimeString(undefined, { hour12: false })}
+                        </span>
+                        {entry.attemptId !== null && (
+                          <Badge variant="secondary" className="text-[9px] px-1.5 py-0 h-4">
+                            #{entry.attemptId}
+                          </Badge>
+                        )}
+                        <Badge
+                          variant={entry.level === 'error' ? 'destructive' : 'outline'}
+                          className="text-[9px] px-1.5 py-0 h-4 uppercase"
+                        >
+                          {entry.level}
+                        </Badge>
+                      </div>
+                      <p className={`${color} font-medium break-words`}>{entry.step}</p>
+                      {entry.details && Object.keys(entry.details).length > 0 && (
+                        <pre className="mt-1 text-[10px] text-muted-foreground whitespace-pre-wrap break-all">
+                          {JSON.stringify(entry.details, null, 2)}
+                        </pre>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-sm font-semibold">System Status</CardTitle>
           </CardHeader>
