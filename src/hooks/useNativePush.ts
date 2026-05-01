@@ -133,6 +133,13 @@ function resolvePending(result: { ok: true } | { ok: false; reason: NativePushRe
   r?.(result);
 }
 
+export async function deleteToken(userId: string) {
+  nativePushLog(null, 'deleting push subscription rows for user', { userId });
+  const { error } = await supabase.from('push_subscriptions').delete().eq('user_id', userId);
+  if (error) throw error;
+  if (lastTokenSavedFor === userId) lastTokenSavedFor = null;
+}
+
 async function saveTokenToBackend(token: string, ctx: PendingContext) {
   const platform = Capacitor.getPlatform() === 'ios' ? 'ios' : Capacitor.getPlatform();
   nativePushLog(null, 'saving native token to backend', {
