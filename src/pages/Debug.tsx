@@ -49,7 +49,7 @@ export default function Debug() {
       if (result.ok) {
         toast.success('APNs registration succeeded.');
       } else {
-        toast.error(`Registration failed: ${result.reason}`);
+        toast.error(`Registration failed: ${result.reason}${result.detail ? ` — ${result.detail}` : ''}`);
       }
     } catch (e: any) {
       toast.error(`Error: ${e?.message ?? String(e)}`);
