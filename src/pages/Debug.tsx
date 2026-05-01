@@ -46,7 +46,7 @@ export default function Debug() {
     setRegistering(true);
     try {
       const result = await registerNativePush({ requestPermission: true });
-      if (result.ok) {
+      if (result.ok === true) {
         toast.success('APNs registration succeeded.');
       } else {
         toast.error(`Registration failed: ${result.reason}${result.detail ? ` — ${result.detail}` : ''}`);
