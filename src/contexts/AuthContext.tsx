@@ -2,7 +2,6 @@ import { createContext, useContext, useEffect, useState, useCallback, type React
 import type { Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { getMyProfile, type Profile } from '@/lib/profiles';
-import { deleteToken } from '@/hooks/useNativePush';
 
 interface AuthContextValue {
   session: Session | null;
@@ -59,6 +58,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       const uid = (await supabase.auth.getUser()).data.user?.id;
       if (uid) {
+        const { deleteToken } = await import('@/hooks/useNativePush');
         await deleteToken(uid);
       }
     } catch {
