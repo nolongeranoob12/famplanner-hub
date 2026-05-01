@@ -183,7 +183,7 @@ async function initializeListenersOnce() {
     });
     const ctx = pendingContext;
     if (!ctx) {
-      console.warn('[NativePush] registration fired with no pending context');
+      nativePushLog(null, 'registration fired with no pending context', undefined, 'warn');
       return;
     }
     try {
