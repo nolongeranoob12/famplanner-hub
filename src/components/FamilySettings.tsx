@@ -221,6 +221,14 @@ export function FamilySettings() {
           )}
 
           <section className="pt-4 border-t space-y-2">
+            <Button
+              variant="outline"
+              onClick={() => { setOpen(false); navigate('/debug'); }}
+              className="w-full rounded-lg"
+            >
+              <Bug className="w-4 h-4 mr-2" /> Push diagnostics
+            </Button>
+
             <Button variant="outline" onClick={() => { signOut(); setOpen(false); }} className="w-full rounded-lg">
               <LogOut className="w-4 h-4 mr-2" /> Sign out
             </Button>
