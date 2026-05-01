@@ -3,7 +3,8 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/co
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Settings, Copy, RefreshCw, Loader2, LogOut, UserMinus, Trash2 } from 'lucide-react';
+import { Settings, Copy, RefreshCw, Loader2, LogOut, UserMinus, Trash2, Bug } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { type Family, getMyFamily, regenerateInviteCode, renameFamily, isFamilyOwner, removeFamilyMember, deleteMyAccount } from '@/lib/families';
 import { updateMyProfile, getFamilyProfiles, getDisplayAvatar, type Profile } from '@/lib/profiles';
@@ -16,6 +17,7 @@ import {
 
 export function FamilySettings() {
   const { user, profile, refreshProfile, signOut } = useAuth();
+  const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const [family, setFamily] = useState<Family | null>(null);
   const [isOwner, setIsOwner] = useState(false);
@@ -219,6 +221,14 @@ export function FamilySettings() {
           )}
 
           <section className="pt-4 border-t space-y-2">
+            <Button
+              variant="outline"
+              onClick={() => { setOpen(false); navigate('/debug'); }}
+              className="w-full rounded-lg"
+            >
+              <Bug className="w-4 h-4 mr-2" /> Push diagnostics
+            </Button>
+
             <Button variant="outline" onClick={() => { signOut(); setOpen(false); }} className="w-full rounded-lg">
               <LogOut className="w-4 h-4 mr-2" /> Sign out
             </Button>
