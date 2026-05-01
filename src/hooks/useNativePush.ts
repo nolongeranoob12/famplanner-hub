@@ -38,15 +38,40 @@ let listenersInitialized = false;
 let pendingContext: PendingContext | null = null;
 let tokenResolver: ((result: { ok: true } | { ok: false; reason: NativePushReason; detail?: string }) => void) | null = null;
 let lastTokenSavedFor: string | null = null; // userId for which we last saved a token
+let registrationAttempt = 0;
+let pendingAttemptId: number | null = null;
+
+function nativePushLog(attemptId: number | null, step: string, details?: Record<string, unknown>) {
+  const prefix = attemptId ? `[NativePush #${attemptId}]` : '[NativePush]';
+  const payload = { at: new Date().toISOString(), ...details };
+  if (details) {
+    console.log(`${prefix} ${step}`, payload);
+  } else {
+    console.log(`${prefix} ${step}`, { at: payload.at });
+  }
+}
 
 function resolvePending(result: { ok: true } | { ok: false; reason: NativePushReason; detail?: string }) {
+  nativePushLog(pendingAttemptId, 'resolving pending registration', {
+    ok: result.ok,
+    reason: result.ok ? undefined : (result as Exclude<NativePushResult, { ok: true }>).reason,
+  });
   const r = tokenResolver;
   tokenResolver = null;
+  pendingAttemptId = null;
   r?.(result);
 }
 
 async function saveTokenToBackend(token: string, ctx: PendingContext) {
   const platform = Capacitor.getPlatform() === 'ios' ? 'ios' : Capacitor.getPlatform();
+  nativePushLog(null, 'saving native token to backend', {
+    platform,
+    userId: ctx.userId,
+    familyId: ctx.familyId,
+    memberName: ctx.displayName,
+    tokenLength: token.length,
+    tokenPreview: token.slice(0, 12),
+  });
   const { error } = await supabase.from('push_subscriptions').upsert(
     {
       user_id: ctx.userId,
@@ -63,15 +88,28 @@ async function saveTokenToBackend(token: string, ctx: PendingContext) {
   );
   if (error) throw error;
   lastTokenSavedFor = ctx.userId;
+  nativePushLog(null, 'native token saved successfully', { platform, userId: ctx.userId });
 }
 
 async function initializeListenersOnce() {
-  if (listenersInitialized) return;
-  if (!Capacitor.isNativePlatform()) return;
+  if (listenersInitialized) {
+    nativePushLog(null, 'listeners already initialized');
+    return;
+  }
+  if (!Capacitor.isNativePlatform()) {
+    nativePushLog(null, 'skipping listener init: not native platform', { platform: Capacitor.getPlatform() });
+    return;
+  }
+  nativePushLog(null, 'initializing Capacitor push listeners', { platform: Capacitor.getPlatform() });
   listenersInitialized = true;
 
   await PushNotifications.addListener('registration', async (token: Token) => {
-    console.log('[NativePush] APNs token received', token.value?.slice(0, 12));
+    nativePushLog(pendingAttemptId, 'registration listener fired: native token received', {
+      tokenLength: token.value?.length ?? 0,
+      tokenPreview: token.value?.slice(0, 12),
+      hasPendingContext: !!pendingContext,
+      hasResolver: !!tokenResolver,
+    });
     const ctx = pendingContext;
     if (!ctx) {
       console.warn('[NativePush] registration fired with no pending context');
@@ -92,7 +130,13 @@ async function initializeListenersOnce() {
 
   await PushNotifications.addListener('registrationError', (err) => {
     const detail = (err as any)?.error ?? JSON.stringify(err);
-    console.error('[NativePush] registrationError', detail);
+    console.error('[NativePush] registrationError', {
+      at: new Date().toISOString(),
+      attemptId: pendingAttemptId,
+      detail,
+      hasPendingContext: !!pendingContext,
+      hasResolver: !!tokenResolver,
+    });
     resolvePending({
       ok: false,
       reason: 'apns-error',
@@ -101,6 +145,11 @@ async function initializeListenersOnce() {
   });
 
   await PushNotifications.addListener('pushNotificationReceived', (notification) => {
+    nativePushLog(null, 'pushNotificationReceived listener fired', {
+      id: notification.id,
+      title: notification.title,
+      badge: notification.badge,
+    });
     window.dispatchEvent(new CustomEvent('native-push-received'));
     if (typeof notification.badge === 'number') {
       Badge.set({ count: notification.badge }).catch(() => undefined);
@@ -108,9 +157,12 @@ async function initializeListenersOnce() {
   });
 
   await PushNotifications.addListener('pushNotificationActionPerformed', () => {
+    nativePushLog(null, 'pushNotificationActionPerformed listener fired');
     window.dispatchEvent(new CustomEvent('native-push-received'));
     if (window.location.pathname !== '/') window.location.assign('/');
   });
+
+  nativePushLog(null, 'Capacitor push listeners initialized');
 }
 
 export function useNativePush(currentUserId: string | null, displayName: string, familyId: string | null) {
@@ -131,27 +183,58 @@ export function useNativePush(currentUserId: string | null, displayName: string,
 
   const register = useCallback(
     async (options: { requestPermission?: boolean } = {}): Promise<NativePushResult> => {
-      if (!currentUserId) return { ok: false, reason: 'no-user' };
-      if (!familyId) return { ok: false, reason: 'no-family' };
-      if (!Capacitor.isNativePlatform()) return { ok: false, reason: 'unsupported' };
+      const attemptId = ++registrationAttempt;
+      nativePushLog(attemptId, 'register() requested', {
+        platform: Capacitor.getPlatform(),
+        isNativePlatform: Capacitor.isNativePlatform(),
+        hasUserId: !!currentUserId,
+        hasFamilyId: !!familyId,
+        displayName,
+        requestPermission: options.requestPermission ?? true,
+      });
+
+      if (!currentUserId) {
+        nativePushLog(attemptId, 'aborting: missing currentUserId');
+        return { ok: false, reason: 'no-user' };
+      }
+      if (!familyId) {
+        nativePushLog(attemptId, 'aborting: missing familyId');
+        return { ok: false, reason: 'no-family' };
+      }
+      if (!Capacitor.isNativePlatform()) {
+        nativePushLog(attemptId, 'aborting: not native platform', { platform: Capacitor.getPlatform() });
+        return { ok: false, reason: 'unsupported' };
+      }
 
       try {
+        nativePushLog(attemptId, 'initializing listeners before permission check');
         await initializeListenersOnce();
 
         const requestPermission = options.requestPermission ?? true;
+        nativePushLog(attemptId, 'checking notification permissions');
         let perm = await PushNotifications.checkPermissions();
+        nativePushLog(attemptId, 'checkPermissions() resolved', { receive: perm.receive });
         if (perm.receive === 'prompt' || perm.receive === 'prompt-with-rationale') {
           if (!requestPermission) {
+            nativePushLog(attemptId, 'permission prompt required but silent registration requested');
             setSubscribed(false);
             setLastError(null);
             return { ok: false, reason: 'permission-pending' };
           }
+          nativePushLog(attemptId, 'requesting notification permissions');
           perm = await PushNotifications.requestPermissions();
+          nativePushLog(attemptId, 'requestPermissions() resolved', { receive: perm.receive });
+        } else {
+          nativePushLog(attemptId, 'requestPermissions() skipped because permission is already decided', { receive: perm.receive });
         }
 
-        await Badge.requestPermissions().catch(() => undefined);
+        nativePushLog(attemptId, 'requesting badge permission');
+        await Badge.requestPermissions()
+          .then(() => nativePushLog(attemptId, 'badge permission request resolved'))
+          .catch((err) => nativePushLog(attemptId, 'badge permission request failed/non-fatal', { detail: (err as Error)?.message ?? String(err) }));
 
         if (perm.receive !== 'granted') {
+          nativePushLog(attemptId, 'aborting: notification permission not granted', { receive: perm.receive });
           setSubscribed(false);
           setLastError('Permission denied. Enable notifications for this app in iOS Settings.');
           return { ok: false, reason: 'blocked' };
@@ -160,12 +243,20 @@ export function useNativePush(currentUserId: string | null, displayName: string,
         // Set the pending context BEFORE calling register so the listener has
         // the user/family info when iOS hands back the token.
         pendingContext = { userId: currentUserId, familyId, displayName };
+        pendingAttemptId = attemptId;
+        nativePushLog(attemptId, 'pending context set; calling PushNotifications.register() after permissions resolved', {
+          permissionReceive: perm.receive,
+          hasResolverBeforeSet: !!tokenResolver,
+        });
 
         const result = await new Promise<NativePushResult>((resolve) => {
+          nativePushLog(attemptId, 'token promise created and resolver installed');
           tokenResolver = resolve;
           const timeoutId = setTimeout(() => {
             if (tokenResolver === resolve) {
+              nativePushLog(attemptId, 'timed out waiting for registration listener token');
               tokenResolver = null;
+              pendingAttemptId = null;
               resolve({
                 ok: false,
                 reason: 'register-timeout',
@@ -177,12 +268,14 @@ export function useNativePush(currentUserId: string | null, displayName: string,
 
           PushNotifications.register()
             .then(() => {
-              console.log('[NativePush] register() call resolved, waiting for token…');
+              nativePushLog(attemptId, 'PushNotifications.register() resolved; waiting for registration listener token');
             })
             .catch((err) => {
               clearTimeout(timeoutId);
               if (tokenResolver === resolve) {
+                nativePushLog(attemptId, 'PushNotifications.register() rejected', { detail: (err as Error)?.message ?? String(err) });
                 tokenResolver = null;
+                pendingAttemptId = null;
                 resolve({
                   ok: false,
                   reason: 'subscribe-failed',
@@ -193,15 +286,20 @@ export function useNativePush(currentUserId: string | null, displayName: string,
         });
 
         if (result.ok === true) {
+          nativePushLog(attemptId, 'registration flow completed successfully');
           setSubscribed(true);
           setLastError(null);
         } else {
+          nativePushLog(attemptId, 'registration flow completed with failure', {
+            reason: result.reason,
+            detail: result.detail,
+          });
           setSubscribed(false);
           setLastError(result.detail ?? null);
         }
         return result;
       } catch (err) {
-        console.error('[NativePush] register failed', err);
+        console.error('[NativePush] register failed', { at: new Date().toISOString(), attemptId, err });
         setSubscribed(false);
         const detail = (err as Error)?.message ?? String(err);
         setLastError(detail);
@@ -214,15 +312,31 @@ export function useNativePush(currentUserId: string | null, displayName: string,
   // Auto-attempt silent registration once we have user + family, but only if
   // permission was already granted in a previous session.
   useEffect(() => {
-    if (!currentUserId || !familyId || !Capacitor.isNativePlatform()) return;
+    if (!currentUserId || !familyId || !Capacitor.isNativePlatform()) {
+      nativePushLog(null, 'silent auto-registration skipped', {
+        hasUserId: !!currentUserId,
+        hasFamilyId: !!familyId,
+        isNativePlatform: Capacitor.isNativePlatform(),
+        platform: Capacitor.getPlatform(),
+      });
+      return;
+    }
     let cancelled = false;
     (async () => {
+      nativePushLog(null, 'silent auto-registration effect started', { currentUserId, familyId });
       await initializeListenersOnce();
       if (cancelled) return;
       const perm = await PushNotifications.checkPermissions();
+      nativePushLog(null, 'silent auto-registration permission check resolved', {
+        receive: perm.receive,
+        lastTokenSavedFor,
+        currentUserId,
+      });
       if (perm.receive === 'granted' && lastTokenSavedFor !== currentUserId) {
+        nativePushLog(null, 'silent auto-registration calling register()', { currentUserId });
         await register({ requestPermission: false });
       } else if (perm.receive === 'granted') {
+        nativePushLog(null, 'silent auto-registration already has token for user; marking subscribed');
         setSubscribed(true);
       }
     })();
