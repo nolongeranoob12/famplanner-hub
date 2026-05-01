@@ -17,6 +17,7 @@ import {
 
 export function FamilySettings() {
   const { user, profile, refreshProfile, signOut } = useAuth();
+  const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const [family, setFamily] = useState<Family | null>(null);
   const [isOwner, setIsOwner] = useState(false);
