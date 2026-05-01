@@ -167,8 +167,8 @@ async function createApnsJwt(teamId: string, keyId: string, privateKey: string) 
   return `${unsigned}.${uint8ToBase64Url(ecdsaSignatureToJwt(new Uint8Array(sig)))}`;
 }
 
-async function sendApnsPush(args: { token: string; title: string; body: string; badge: number; bundleId: string; jwt: string }) {
-  const res = await fetch(`https://api.push.apple.com/3/device/${args.token}`, {
+async function sendApnsPush(args: { token: string; title: string; body: string; badge: number; bundleId: string; jwt: string; host: string }) {
+  const res = await fetch(`https://${args.host}/3/device/${args.token}`, {
     method: "POST",
     headers: {
       authorization: `bearer ${args.jwt}`,
@@ -182,11 +182,16 @@ async function sendApnsPush(args: { token: string; title: string; body: string; 
         alert: { title: args.title, body: args.body },
         sound: "default",
         badge: args.badge,
+        "mutable-content": 1,
       },
       url: "/",
     }),
   });
-  return res;
+  let reason = "";
+  if (res.status >= 400) {
+    try { reason = await res.clone().text(); } catch { /* ignore */ }
+  }
+  return { res, reason };
 }
 
 Deno.serve(async (req) => {
