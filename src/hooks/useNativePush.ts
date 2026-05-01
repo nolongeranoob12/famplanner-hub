@@ -39,20 +39,26 @@ let pendingContext: PendingContext | null = null;
 let tokenResolver: ((result: { ok: true } | { ok: false; reason: NativePushReason; detail?: string }) => void) | null = null;
 let lastTokenSavedFor: string | null = null; // userId for which we last saved a token
 let registrationAttempt = 0;
+let pendingAttemptId: number | null = null;
 
 function nativePushLog(attemptId: number | null, step: string, details?: Record<string, unknown>) {
   const prefix = attemptId ? `[NativePush #${attemptId}]` : '[NativePush]';
+  const payload = { at: new Date().toISOString(), ...details };
   if (details) {
-    console.log(`${prefix} ${step}`, details);
+    console.log(`${prefix} ${step}`, payload);
   } else {
-    console.log(`${prefix} ${step}`);
+    console.log(`${prefix} ${step}`, { at: payload.at });
   }
 }
 
 function resolvePending(result: { ok: true } | { ok: false; reason: NativePushReason; detail?: string }) {
-  nativePushLog(null, 'resolving pending registration', { ok: result.ok, reason: result.ok ? undefined : result.reason });
+  nativePushLog(pendingAttemptId, 'resolving pending registration', {
+    ok: result.ok,
+    reason: result.ok ? undefined : (result as Exclude<NativePushResult, { ok: true }>).reason,
+  });
   const r = tokenResolver;
   tokenResolver = null;
+  pendingAttemptId = null;
   r?.(result);
 }
 
@@ -98,7 +104,7 @@ async function initializeListenersOnce() {
   listenersInitialized = true;
 
   await PushNotifications.addListener('registration', async (token: Token) => {
-    nativePushLog(null, 'registration listener fired: native token received', {
+    nativePushLog(pendingAttemptId, 'registration listener fired: native token received', {
       tokenLength: token.value?.length ?? 0,
       tokenPreview: token.value?.slice(0, 12),
       hasPendingContext: !!pendingContext,
@@ -124,7 +130,13 @@ async function initializeListenersOnce() {
 
   await PushNotifications.addListener('registrationError', (err) => {
     const detail = (err as any)?.error ?? JSON.stringify(err);
-    console.error('[NativePush] registrationError', { detail, hasPendingContext: !!pendingContext, hasResolver: !!tokenResolver });
+    console.error('[NativePush] registrationError', {
+      at: new Date().toISOString(),
+      attemptId: pendingAttemptId,
+      detail,
+      hasPendingContext: !!pendingContext,
+      hasResolver: !!tokenResolver,
+    });
     resolvePending({
       ok: false,
       reason: 'apns-error',
