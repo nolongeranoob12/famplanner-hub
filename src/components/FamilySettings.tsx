@@ -110,12 +110,21 @@ export function FamilySettings() {
           <Settings className="w-4 h-4" />
         </Button>
       </SheetTrigger>
-      <SheetContent className="w-full sm:max-w-md overflow-y-auto">
-        <SheetHeader>
-          <SheetTitle>Settings</SheetTitle>
-        </SheetHeader>
+      <SheetContent
+        className="w-full sm:max-w-md overflow-y-auto p-0"
+        style={{
+          paddingTop: 'max(env(safe-area-inset-top), 1rem)',
+          paddingBottom: 'max(env(safe-area-inset-bottom), 1rem)',
+          paddingLeft: 'max(env(safe-area-inset-left), 1.25rem)',
+          paddingRight: 'max(env(safe-area-inset-right), 1.25rem)',
+        }}
+      >
+        <div className="mx-auto w-full max-w-sm">
+          <SheetHeader className="pt-2 pr-8">
+            <SheetTitle>Settings</SheetTitle>
+          </SheetHeader>
 
-        <div className="space-y-6 mt-6">
+          <div className="space-y-6 mt-6">
           {/* Profile */}
           <section className="space-y-3">
             <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Your profile</h3>
@@ -270,6 +279,7 @@ export function FamilySettings() {
               </AlertDialogContent>
             </AlertDialog>
           </section>
+          </div>
         </div>
       </SheetContent>
     </Sheet>
