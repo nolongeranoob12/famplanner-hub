@@ -38,8 +38,19 @@ let listenersInitialized = false;
 let pendingContext: PendingContext | null = null;
 let tokenResolver: ((result: { ok: true } | { ok: false; reason: NativePushReason; detail?: string }) => void) | null = null;
 let lastTokenSavedFor: string | null = null; // userId for which we last saved a token
+let registrationAttempt = 0;
+
+function nativePushLog(attemptId: number | null, step: string, details?: Record<string, unknown>) {
+  const prefix = attemptId ? `[NativePush #${attemptId}]` : '[NativePush]';
+  if (details) {
+    console.log(`${prefix} ${step}`, details);
+  } else {
+    console.log(`${prefix} ${step}`);
+  }
+}
 
 function resolvePending(result: { ok: true } | { ok: false; reason: NativePushReason; detail?: string }) {
+  nativePushLog(null, 'resolving pending registration', { ok: result.ok, reason: result.ok ? undefined : result.reason });
   const r = tokenResolver;
   tokenResolver = null;
   r?.(result);
@@ -47,6 +58,14 @@ function resolvePending(result: { ok: true } | { ok: false; reason: NativePushRe
 
 async function saveTokenToBackend(token: string, ctx: PendingContext) {
   const platform = Capacitor.getPlatform() === 'ios' ? 'ios' : Capacitor.getPlatform();
+  nativePushLog(null, 'saving native token to backend', {
+    platform,
+    userId: ctx.userId,
+    familyId: ctx.familyId,
+    memberName: ctx.displayName,
+    tokenLength: token.length,
+    tokenPreview: token.slice(0, 12),
+  });
   const { error } = await supabase.from('push_subscriptions').upsert(
     {
       user_id: ctx.userId,
@@ -63,15 +82,28 @@ async function saveTokenToBackend(token: string, ctx: PendingContext) {
   );
   if (error) throw error;
   lastTokenSavedFor = ctx.userId;
+  nativePushLog(null, 'native token saved successfully', { platform, userId: ctx.userId });
 }
 
 async function initializeListenersOnce() {
-  if (listenersInitialized) return;
-  if (!Capacitor.isNativePlatform()) return;
+  if (listenersInitialized) {
+    nativePushLog(null, 'listeners already initialized');
+    return;
+  }
+  if (!Capacitor.isNativePlatform()) {
+    nativePushLog(null, 'skipping listener init: not native platform', { platform: Capacitor.getPlatform() });
+    return;
+  }
+  nativePushLog(null, 'initializing Capacitor push listeners', { platform: Capacitor.getPlatform() });
   listenersInitialized = true;
 
   await PushNotifications.addListener('registration', async (token: Token) => {
-    console.log('[NativePush] APNs token received', token.value?.slice(0, 12));
+    nativePushLog(null, 'registration listener fired: native token received', {
+      tokenLength: token.value?.length ?? 0,
+      tokenPreview: token.value?.slice(0, 12),
+      hasPendingContext: !!pendingContext,
+      hasResolver: !!tokenResolver,
+    });
     const ctx = pendingContext;
     if (!ctx) {
       console.warn('[NativePush] registration fired with no pending context');
@@ -92,7 +124,7 @@ async function initializeListenersOnce() {
 
   await PushNotifications.addListener('registrationError', (err) => {
     const detail = (err as any)?.error ?? JSON.stringify(err);
-    console.error('[NativePush] registrationError', detail);
+    console.error('[NativePush] registrationError', { detail, hasPendingContext: !!pendingContext, hasResolver: !!tokenResolver });
     resolvePending({
       ok: false,
       reason: 'apns-error',
@@ -101,6 +133,11 @@ async function initializeListenersOnce() {
   });
 
   await PushNotifications.addListener('pushNotificationReceived', (notification) => {
+    nativePushLog(null, 'pushNotificationReceived listener fired', {
+      id: notification.id,
+      title: notification.title,
+      badge: notification.badge,
+    });
     window.dispatchEvent(new CustomEvent('native-push-received'));
     if (typeof notification.badge === 'number') {
       Badge.set({ count: notification.badge }).catch(() => undefined);
@@ -108,9 +145,12 @@ async function initializeListenersOnce() {
   });
 
   await PushNotifications.addListener('pushNotificationActionPerformed', () => {
+    nativePushLog(null, 'pushNotificationActionPerformed listener fired');
     window.dispatchEvent(new CustomEvent('native-push-received'));
     if (window.location.pathname !== '/') window.location.assign('/');
   });
+
+  nativePushLog(null, 'Capacitor push listeners initialized');
 }
 
 export function useNativePush(currentUserId: string | null, displayName: string, familyId: string | null) {
