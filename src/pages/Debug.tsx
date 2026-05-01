@@ -166,7 +166,14 @@ export default function Debug() {
 
   return (
     <div className="min-h-dvh bg-background">
-      <header className="sticky top-0 z-10 bg-card/80 backdrop-blur-xl border-b border-border">
+      <header
+        className="sticky top-0 z-10 bg-card/80 backdrop-blur-xl border-b border-border"
+        style={{
+          paddingTop: 'env(safe-area-inset-top)',
+          paddingLeft: 'env(safe-area-inset-left)',
+          paddingRight: 'env(safe-area-inset-right)',
+        }}
+      >
         <div className="max-w-xl mx-auto px-4 py-3 flex items-center gap-3">
           <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => navigate('/')}>
             <ArrowLeft className="w-4 h-4" />
@@ -179,7 +186,14 @@ export default function Debug() {
         </div>
       </header>
 
-      <main className="max-w-xl mx-auto px-4 py-5 space-y-4">
+      <main
+        className="max-w-xl mx-auto px-4 py-5 space-y-4"
+        style={{
+          paddingLeft: 'max(env(safe-area-inset-left), 1rem)',
+          paddingRight: 'max(env(safe-area-inset-right), 1rem)',
+          paddingBottom: 'max(env(safe-area-inset-bottom), 1.25rem)',
+        }}
+      >
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-sm font-semibold">Send test push to my family</CardTitle>
