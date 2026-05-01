@@ -53,6 +53,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [refreshProfile]);
 
   const signOut = useCallback(async () => {
+    // Remove this device's push subscription rows for the current user
+    // so the next account signing in on the same device can register cleanly.
+    try {
+      const uid = (await supabase.auth.getUser()).data.user?.id;
+      if (uid) {
+        await supabase.from('push_subscriptions').delete().eq('user_id', uid);
+      }
+    } catch {
+      // best-effort cleanup; ignore failures
+    }
     await supabase.auth.signOut();
     setProfile(null);
   }, []);
